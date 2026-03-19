@@ -1,21 +1,18 @@
 {
-  "name": "@bsv/project",
+  "name": "@bsv/meter",
   "private": true,
   "version": "1.0.0",
-  "description": "Standard BSV project structure",
+  "description": "Meter - on-chain counter demo using Runar smart contracts",
   "scripts": {
-    "lars": "lars",
-    "cars": "cars",
-    "lars:config": "lars config",
-    "start": "lars start",
-    "build": "cars build 1",
-    "deploy": "cars deploy now 1"
+    "dev": "docker compose up --build",
+    "dev:down": "docker compose down",
+    "dev:clean": "docker compose down -v",
+    "build": "docker compose build",
+    "frontend:dev": "cd frontend && npm run start",
+    "backend:build": "cd backend && npm run build",
+    "backend:compile": "cd backend && npm run compile"
   },
   "keywords": [],
   "author": "",
-  "license": "SEE LICENSE IN LICENSE.txt",
-  "devDependencies": {
-    "@bsv/cars-cli": "^1.1.4",
-    "@bsv/lars": "^1.5.3"
-  }
+  "license": "SEE LICENSE IN LICENSE.txt"
 }
