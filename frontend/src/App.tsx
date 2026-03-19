@@ -23,7 +23,10 @@ import AddIcon from '@mui/icons-material/Add'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import useAsyncEffect from 'use-async-effect'
 import { Meter, Token } from './types/types'
-import { MeterContract, MeterArtifact } from '@bsv/backend'
+import { RunarContract, extractStateFromScript } from 'runar-sdk'
+import type { RunarArtifact } from 'runar-sdk'
+import counterArtifact from './artifacts/Counter.runar.json'
+const artifact = counterArtifact as unknown as RunarArtifact
 import {
   SHIPBroadcaster,
   LookupResolver,
@@ -32,13 +35,11 @@ import {
   ProtoWallet,
   WalletClient,
   SHIPBroadcasterConfig,
-  HTTPSOverlayBroadcastFacilitator
+  HTTPSOverlayBroadcastFacilitator,
+  CreateActionArgs
 } from '@bsv/sdk'
-MeterContract.loadArtifact(MeterArtifact)
-import { bsv, toByteString } from 'scrypt-ts'
 import { Card } from '@mui/material'
 import { CardContent } from '@mui/material'
-import { CreateActionArgs } from '@bsv/sdk'
 
 // Only used to verify signature
 const anyoneWallet = new ProtoWallet('anyone')
@@ -104,12 +105,8 @@ const App: React.FC = () => {
         ).signature
       )
 
-      const meter = new MeterContract(
-        BigInt(1),
-        toByteString(publicKey, false),
-        toByteString(signature, false)
-      )
-      const lockingScript = meter.lockingScript.toHex()
+      const counter = new RunarContract(artifact, [BigInt(1), publicKey, signature])
+      const lockingScript = counter.getLockingScript()
 
       const newMeterToken = await walletClient.createAction({
         description: 'Create a meter',
@@ -200,12 +197,12 @@ const App: React.FC = () => {
             const script = tx.outputs[
               Number(result.outputIndex)
             ].lockingScript.toHex()
-            const meter = MeterContract.fromLockingScript(
-              script
-            ) as MeterContract
 
-            console.log('meter.count:', meter.count)
-            console.log('meter.creatorIdentityKey:', meter.creatorIdentityKey)
+            const state = extractStateFromScript(artifact, script)
+            if (!state) throw new Error('Failed to extract state')
+
+            console.log('state.count:', state.count)
+            console.log('state.creatorIdentityKey:', state.creatorIdentityKey)
             console.log(
               'tx.outputs[Number(result.outputIndex)]:',
               tx.outputs[Number(result.outputIndex)]
@@ -215,9 +212,9 @@ const App: React.FC = () => {
             const verifyResult = await anyoneWallet.verifySignature({
               protocolID: [0, 'meter'],
               keyID: '1',
-              counterparty: meter.creatorIdentityKey,
+              counterparty: String(state.creatorIdentityKey),
               data: [1],
-              signature: Utils.toArray(meter.creatorSignature, 'hex')
+              signature: Utils.toArray(String(state.creatorSignature), 'hex')
             })
 
             if (!verifyResult.valid) {
@@ -229,8 +226,8 @@ const App: React.FC = () => {
             console.log('fetchMeters Transaction atomicBeefTX:', atomicBeefTX)
 
             parsedResults.push({
-              value: Number(meter.count),
-              creatorIdentityKey: String(meter.creatorIdentityKey),
+              value: Number(state.count as bigint),
+              creatorIdentityKey: String(state.creatorIdentityKey),
               token: {
                 atomicBeefTX,
                 txid: tx.id('hex'),
@@ -277,44 +274,29 @@ const App: React.FC = () => {
         )
       }
 
-      // Create Meter Contract instances
-      const meterContract = MeterContract.fromLockingScript(
-        meter.token.lockingScript
-      )
-      const nextMeter = MeterContract.fromLockingScript(
-        meter.token.lockingScript
-      ) as MeterContract
-      nextMeter.increment()
-      const nextScript = nextMeter.lockingScript
+      // Create Runar Contract instance from current UTXO
+      const contract = RunarContract.fromUtxo(artifact, {
+        txid: meter.token.txid,
+        outputIndex: meter.token.outputIndex,
+        satoshis: meter.token.satoshis,
+        script: meter.token.lockingScript
+      })
+
+      // Build next state
+      const nextContract = RunarContract.fromUtxo(artifact, {
+        txid: meter.token.txid,
+        outputIndex: meter.token.outputIndex,
+        satoshis: meter.token.satoshis,
+        script: meter.token.lockingScript
+      })
+      const nextState = { ...contract.state, count: (contract.state.count as bigint) + 1n }
+      nextContract.setState(nextState)
+      const nextScript = nextContract.getLockingScript()
+
+      const unlockingScript = contract.buildUnlockingScript('increment', [])
 
       // Convert from hex string
       const atomicBeef = Utils.toArray(meter.token.atomicBeefTX, 'hex')
-      const tx = Transaction.fromAtomicBEEF(atomicBeef)
-
-      // Create a BSV Transaction for sCrypt Smart Contract usage
-      const parsedFromTx = new bsv.Transaction(tx.toHex())
-
-      // Generate unlocking script
-      const unlockingScript = await meterContract.getUnlockingScript(
-        async self => {
-          const bsvtx = new bsv.Transaction()
-          bsvtx.from({
-            txId: meter.token.txid,
-            outputIndex: meter.token.outputIndex,
-            script: meter.token.lockingScript,
-            satoshis: meter.token.satoshis
-          })
-          bsvtx.addOutput(
-            new bsv.Transaction.Output({
-              script: nextScript,
-              satoshis: meter.token.satoshis
-            })
-          )
-          self.to = { tx: bsvtx, inputIndex: 0 }
-          self.from = { tx: parsedFromTx, outputIndex: 0 }
-            ; (self as MeterContract).incrementOnChain()
-        }
-      )
 
       // Prepare broadcast parameters
       const broadcastActionParams: CreateActionArgs = {
@@ -322,14 +304,14 @@ const App: React.FC = () => {
           {
             inputDescription: 'Increment meter token',
             outpoint: `${meter.token.txid}.${meter.token.outputIndex}`,
-            unlockingScript: unlockingScript.toHex()
+            unlockingScript
           }
         ],
         inputBEEF: atomicBeef,
         outputs: [
           {
             basket: 'meter tokens',
-            lockingScript: nextScript.toHex(),
+            lockingScript: nextScript,
             satoshis: meter.token.satoshis,
             outputDescription: 'Counter token'
           }
@@ -375,9 +357,7 @@ const App: React.FC = () => {
           'broadcasterResult.description:',
           broadcasterResult.description
         )
-        //throw new Error('Transaction failed to broadcast')
       }
-      //console.log('broadcasterResult.message:', broadcasterResult.message)
 
       // Update state with new meter transaction details
       setMeters(originalMeters => {
@@ -389,7 +369,7 @@ const App: React.FC = () => {
             atomicBeefTX: Utils.toHex(newMeterToken.tx!),
             txid,
             outputIndex: 0,
-            lockingScript: nextScript.toHex(),
+            lockingScript: nextScript,
             satoshis: meter.token.satoshis
           } as Token
         }
@@ -421,44 +401,29 @@ const App: React.FC = () => {
         )
       }
 
-      // Create Meter Contract instances
-      const meterContract = MeterContract.fromLockingScript(
-        meter.token.lockingScript
-      )
-      const nextMeter = MeterContract.fromLockingScript(
-        meter.token.lockingScript
-      ) as MeterContract
-      nextMeter.decrement()
-      const nextScript = nextMeter.lockingScript
+      // Create Runar Contract instance from current UTXO
+      const contract = RunarContract.fromUtxo(artifact, {
+        txid: meter.token.txid,
+        outputIndex: meter.token.outputIndex,
+        satoshis: meter.token.satoshis,
+        script: meter.token.lockingScript
+      })
+
+      // Build next state
+      const nextContract = RunarContract.fromUtxo(artifact, {
+        txid: meter.token.txid,
+        outputIndex: meter.token.outputIndex,
+        satoshis: meter.token.satoshis,
+        script: meter.token.lockingScript
+      })
+      const nextState = { ...contract.state, count: (contract.state.count as bigint) - 1n }
+      nextContract.setState(nextState)
+      const nextScript = nextContract.getLockingScript()
+
+      const unlockingScript = contract.buildUnlockingScript('decrement', [])
 
       // Convert from hex string
       const atomicBeef = Utils.toArray(meter.token.atomicBeefTX, 'hex')
-      const tx = Transaction.fromAtomicBEEF(atomicBeef)
-
-      // Create a BSV Transaction for sCrypt Smart Contract usage
-      const parsedFromTx = new bsv.Transaction(tx.toHex())
-
-      // Generate unlocking script
-      const unlockingScript = await meterContract.getUnlockingScript(
-        async self => {
-          const bsvtx = new bsv.Transaction()
-          bsvtx.from({
-            txId: meter.token.txid,
-            outputIndex: meter.token.outputIndex,
-            script: meter.token.lockingScript,
-            satoshis: meter.token.satoshis
-          })
-          bsvtx.addOutput(
-            new bsv.Transaction.Output({
-              script: nextScript,
-              satoshis: meter.token.satoshis
-            })
-          )
-          self.to = { tx: bsvtx, inputIndex: 0 }
-          self.from = { tx: parsedFromTx, outputIndex: 0 }
-            ; (self as MeterContract).decrementOnChain()
-        }
-      )
 
       // Prepare broadcast parameters
       const broadcastActionParams: CreateActionArgs = {
@@ -466,14 +431,14 @@ const App: React.FC = () => {
           {
             inputDescription: 'Decrement meter token',
             outpoint: `${meter.token.txid}.${meter.token.outputIndex}`,
-            unlockingScript: unlockingScript.toHex()
+            unlockingScript
           }
         ],
         inputBEEF: atomicBeef,
         outputs: [
           {
             basket: 'meter tokens',
-            lockingScript: nextScript.toHex(),
+            lockingScript: nextScript,
             satoshis: meter.token.satoshis,
             outputDescription: 'Counter token'
           }
@@ -519,9 +484,7 @@ const App: React.FC = () => {
           'broadcasterResult.description:',
           broadcasterResult.description
         )
-        //throw new Error('Transaction failed to broadcast')
       }
-      //console.log('broadcasterResult.message:', broadcasterResult.message)
 
       // Update state with new meter transaction details
       setMeters(originalMeters => {
@@ -533,7 +496,7 @@ const App: React.FC = () => {
             atomicBeefTX: Utils.toHex(newMeterToken.tx!),
             txid,
             outputIndex: 0,
-            lockingScript: nextScript.toHex(),
+            lockingScript: nextScript,
             satoshis: meter.token.satoshis
           } as Token
         }

@@ -4,7 +4,6 @@
   "private": true,
   "license": "Open BSV License",
   "dependencies": {
-    "@bsv/backend": "file:../backend",
     "@bsv/sdk": "^1.8.11",
     "@emotion/react": "^11.13.0",
     "@emotion/styled": "^11.13.0",
@@ -17,14 +16,13 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-toastify": "^10.0.5",
-    "scrypt-ts": "^1.4.3",
-    "scrypt-ts-lib": "^0.1.25",
+    "runar-sdk": "^0.1.0",
     "use-async-effect": "^2.2.7"
   },
   "scripts": {
-    "start": "webpack serve --config webpack.dev.js",
-    "build": "webpack --config webpack.prod.js",
-    "compile": "npx scrypt-cli compile"
+    "prebuild": "mkdir -p src/artifacts && cp ../backend/artifacts/Counter.runar.json src/artifacts/",
+    "start": "npm run prebuild && webpack serve --config webpack.dev.js",
+    "build": "npm run prebuild && webpack --config webpack.prod.js"
   },
   "eslintConfig": {
     "extends": [

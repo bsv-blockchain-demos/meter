@@ -1,5 +1,3 @@
-declare module 'react-toastify'
-
 export interface Token {
   atomicBeefTX: HexString
   txid: TXIDHexString

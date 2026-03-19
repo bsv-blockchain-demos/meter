@@ -21,11 +21,9 @@
     "jsx": "react-jsx",
     "sourceMap": true,
     "outDir": "./dist",
-    "experimentalDecorators": true
   },
   "include": [
     "src",
-    "../backend/src/contracts",
     "src/types"
   ]
 }
