@@ -1,6 +1,6 @@
 export default `# Meter Topic Manager Docs
 
-To have outputs accepted into the Meter overlay network, use the Meter sCrypt contract to create valid locking scripts.
+To have outputs accepted into the Meter overlay network, use the Runar counter contract to create valid locking scripts.
 
 Submit transactions that start new meters at 1, or spend existing meters already submitted.
 

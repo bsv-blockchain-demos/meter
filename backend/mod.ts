@@ -1,6 +1,4 @@
-export { MeterContract } from './src/contracts/Meter.js'
-export { default as MeterArtifact } from './artifacts/Meter.json'
+export { default as CounterArtifact } from './artifacts/Counter.runar.json' with { type: 'json' }
 export { default as MeterLookupServiceFactory } from './src/lookup-services/MeterLookupServiceFactory.js'
-export { default as MeterTopicManager } from './src/topic-managers/MeterTopicDocs.md.js'
-export { default as MeterTemplate } from './src/script-templates/MeterTemplate.js'
+export { default as MeterTopicManager } from './src/topic-managers/MeterTopicManager.js'
 export * from './src/types.js'
