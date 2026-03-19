@@ -1,28 +1,24 @@
-import { Engine } from '@bsv/overlay'
-import { MongoClient } from 'mongodb'
+import OverlayExpress from '@bsv/overlay-express'
 import MeterTopicManager from './topic-managers/MeterTopicManager.js'
 import MeterLookupServiceFactory from './lookup-services/MeterLookupServiceFactory.js'
 
 const PORT = Number(process.env.PORT ?? 3001)
 const MONGO_URL = process.env.MONGO_URL ?? 'mongodb://localhost:27017'
+const SERVER_PRIVATE_KEY = process.env.SERVER_PRIVATE_KEY ?? '0000000000000000000000000000000000000000000000000000000000000001'
+const HOSTING_DOMAIN = process.env.HOSTING_DOMAIN ?? 'localhost'
 
-async function main() {
-  const client = new MongoClient(MONGO_URL)
-  await client.connect()
-  const db = client.db('meter')
+async function main () {
+  const server = new OverlayExpress('meter', SERVER_PRIVATE_KEY, HOSTING_DOMAIN)
 
-  const engine = new Engine({
-    topicManagers: {
-      tm_meter: new MeterTopicManager()
-    },
-    lookupServices: {
-      ls_meter: MeterLookupServiceFactory(db)
-    }
-  })
+  server.configurePort(PORT)
+  server.configureNetwork(process.env.BSV_NETWORK === 'test' ? 'test' : 'main')
 
-  // The exact API depends on @bsv/overlay version — check docs for
-  // Engine.startHTTP(), OverlayExpress, or similar. Adjust as needed.
-  await engine.listen(PORT)
+  await server.configureMongo(MONGO_URL)
+
+  server.configureTopicManager('tm_meter', new MeterTopicManager())
+  server.configureLookupServiceWithMongo('ls_meter', (db) => MeterLookupServiceFactory(db))
+
+  await server.start()
   console.log(`Meter overlay service listening on port ${PORT}`)
 }
 

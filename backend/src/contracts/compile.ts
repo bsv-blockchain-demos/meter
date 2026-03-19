@@ -13,9 +13,10 @@ if (!result.success) {
   process.exit(1)
 }
 
+const artifact = result.artifact!
 mkdirSync(new URL('../../artifacts', import.meta.url), { recursive: true })
 writeFileSync(
   new URL('../../artifacts/Counter.runar.json', import.meta.url),
-  JSON.stringify(result.artifact, null, 2)
+  JSON.stringify(artifact, (_, v) => typeof v === 'bigint' ? v.toString() : v, 2)
 )
-console.log(`Compiled: ${result.artifact.contractName}`)
+console.log(`Compiled: ${artifact.contractName}`)

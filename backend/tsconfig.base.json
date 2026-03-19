@@ -18,7 +18,6 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "sourceMap": true,
-    "experimentalDecorators": true,
     "resolveJsonModule": true,
     "esModuleInterop": true
   },
