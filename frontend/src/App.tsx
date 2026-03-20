@@ -4,27 +4,26 @@ import 'react-toastify/dist/ReactToastify.css'
 import {
   AppBar,
   Toolbar,
-  List,
-  ListItem,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
   Button,
-  Fab,
   LinearProgress,
   Typography,
   IconButton,
-  Grid,
   Card,
   CardContent,
   TextField,
-  Chip
+  Chip,
+  Box,
+  Container,
+  Avatar
 } from '@mui/material'
-import { styled } from '@mui/system'
-import AddIcon from '@mui/icons-material/Add'
 import GitHubIcon from '@mui/icons-material/GitHub'
+import CreateIcon from '@mui/icons-material/AutoStories'
+import DrawIcon from '@mui/icons-material/Draw'
 import useAsyncEffect from 'use-async-effect'
 import { YearBook, Token } from './types/types'
 import { RunarContract, extractStateFromScript } from 'runar-sdk'
@@ -50,23 +49,6 @@ const httpFacilitator = new HTTPSOverlayBroadcastFacilitator(fetch, true)
 const TOPIC = 'tm_yearbook'
 const SERVICE = 'ls_yearbook'
 
-const AppBarPlaceholder = styled('div')({ height: '4em' })
-
-const NoItems = styled(Grid)({
-  margin: 'auto',
-  textAlign: 'center',
-  marginTop: '5em'
-})
-
-const AddMoreFab = styled(Fab)({
-  position: 'fixed',
-  right: '1em',
-  bottom: '1em',
-  zIndex: 10
-})
-
-const LoadingBar = styled(LinearProgress)({ margin: '1em' })
-
 const broadcasterConfig = (): SHIPBroadcasterConfig => ({
   networkPreset: NETWORK_PRESET,
   facilitator: httpFacilitator,
@@ -81,6 +63,16 @@ const broadcasterConfig = (): SHIPBroadcasterConfig => ({
     [TOPIC]: [OVERLAY_URL]
   }
 })
+
+const truncateKey = (key: string): string =>
+  key.length > 16 ? `${key.slice(0, 8)}...${key.slice(-8)}` : key
+
+const keyToColor = (key: string): string => {
+  let hash = 0
+  for (let i = 0; i < key.length; i++) hash = key.charCodeAt(i) + ((hash << 5) - hash)
+  const hue = Math.abs(hash) % 360
+  return `hsl(${hue}, 60%, 50%)`
+}
 
 const App: React.FC = () => {
   const [createOpen, setCreateOpen] = useState(false)
@@ -118,10 +110,7 @@ const App: React.FC = () => {
 
       const broadcaster = new SHIPBroadcaster([TOPIC], broadcasterConfig())
       const broadcastResult = await broadcaster.broadcast(transaction)
-      console.log('broadcastResult:', broadcastResult)
-      if (broadcastResult.status === 'error') {
-        throw new Error('Transaction failed to broadcast')
-      }
+      if (broadcastResult.status === 'error') throw new Error('Transaction failed to broadcast')
 
       toast.dark('Yearbook created!')
       setYearBooks(prev => [{
@@ -156,10 +145,7 @@ const App: React.FC = () => {
           query: { findAll: true }
         }) as any
 
-        if (!lookupResult || lookupResult.type !== 'output-list' || !lookupResult.outputs) {
-          console.error('No outputs found')
-          return
-        }
+        if (!lookupResult || lookupResult.type !== 'output-list' || !lookupResult.outputs) return
 
         const parsed: YearBook[] = []
         for (const result of lookupResult.outputs) {
@@ -202,7 +188,6 @@ const App: React.FC = () => {
         throw new Error('Missing token data')
       }
 
-      // Build next state (entryCount + 1)
       const contract = RunarContract.fromUtxo(artifact, {
         txid: yb.token.txid,
         outputIndex: yb.token.outputIndex,
@@ -222,7 +207,6 @@ const App: React.FC = () => {
       })
       const nextScript = nextContract.getLockingScript()
       const unlockingScript = contract.buildUnlockingScript('sign', [])
-
       const atomicBeef = Utils.toArray(yb.token.atomicBeefTX, 'hex')
 
       const actionParams: CreateActionArgs = {
@@ -250,7 +234,6 @@ const App: React.FC = () => {
 
       const broadcaster = new SHIPBroadcaster([TOPIC], broadcasterConfig())
       const broadcastResult = await broadcaster.broadcast(transaction)
-
       if (broadcastResult.status === 'error') {
         console.error('Broadcast error:', broadcastResult.description)
       }
@@ -282,107 +265,231 @@ const App: React.FC = () => {
   }
 
   return (
-    <>
-      <ToastContainer position="top-right" autoClose={5000} />
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Sign My Yearbook
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <ToastContainer position="top-center" autoClose={4000} theme="dark" />
+
+      {/* Nav */}
+      <AppBar position="fixed" elevation={0} sx={{
+        bgcolor: 'rgba(10, 10, 26, 0.8)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)'
+      }}>
+        <Toolbar sx={{ maxWidth: 'lg', width: '100%', mx: 'auto' }}>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700, letterSpacing: '-0.01em' }}>
+            YearBook
           </Typography>
           <IconButton
-            sx={{ color: '#ffffff' }}
+            sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
             onClick={() => window.open('https://github.com/bsv-blockchain-demos/meter', '_blank')}
           >
             <GitHubIcon />
           </IconButton>
         </Toolbar>
       </AppBar>
-      <AppBarPlaceholder />
 
-      {yearBooks.length >= 1 && (
-        <AddMoreFab color="primary" onClick={() => setCreateOpen(true)}>
-          <AddIcon />
-        </AddMoreFab>
-      )}
+      {/* Hero */}
+      <Box sx={{
+        pt: { xs: 14, md: 18 },
+        pb: { xs: 6, md: 10 },
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: '-30%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '600px',
+          height: '600px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(108, 99, 255, 0.12) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }
+      }}>
+        <Container maxWidth="sm">
+          <Typography variant="h3" sx={{
+            fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+            mb: 2,
+            background: 'linear-gradient(135deg, #6C63FF 0%, #FF6B9D 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            Sign My Yearbook
+          </Typography>
+          <Typography variant="body1" sx={{
+            color: 'text.secondary',
+            fontSize: { xs: '1rem', md: '1.15rem' },
+            lineHeight: 1.7,
+            mb: 4,
+            maxWidth: 440,
+            mx: 'auto'
+          }}>
+            Create an on-chain yearbook and let friends sign it.
+            Every signature is a Bitcoin transaction, forever on the blockchain.
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<CreateIcon />}
+            onClick={() => setCreateOpen(true)}
+            sx={{
+              px: 4,
+              py: 1.5,
+              fontSize: '1rem',
+              background: 'linear-gradient(135deg, #6C63FF, #8B83FF)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5B52EE, #7A73FF)',
+                boxShadow: '0 8px 32px rgba(108, 99, 255, 0.35)'
+              }
+            }}
+          >
+            Create a Yearbook
+          </Button>
+        </Container>
+      </Box>
 
-      {yearBooksLoading ? (
-        <LoadingBar />
-      ) : (
-        <List>
-          {yearBooks.length === 0 && (
-            <NoItems container direction="column" justifyContent="center" alignItems="center">
-              <Grid item>
-                <Typography variant="h4">No Yearbooks Yet</Typography>
-                <Typography color="textSecondary">
-                  Create your yearbook and let others sign it
-                </Typography>
-              </Grid>
-              <Grid item sx={{ paddingTop: '2.5em', marginBottom: '1em' }}>
-                <Fab color="primary" onClick={() => setCreateOpen(true)}>
-                  <AddIcon />
-                </Fab>
-              </Grid>
-            </NoItems>
-          )}
-          {yearBooks.map((yb, i) => (
-            <ListItem key={i}>
-              <Card sx={{ width: '100%', padding: 2 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Yearbook
-                  </Typography>
-                  <Chip
-                    label={`${yb.entryCount} signature${yb.entryCount !== 1 ? 's' : ''}`}
-                    color="primary"
-                    size="small"
-                    sx={{ mb: 1 }}
-                  />
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2, wordBreak: 'break-all' }}>
-                    Owner: {yb.creatorIdentityKey}
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => setSignOpen(i)}
-                  >
-                    Sign This Yearbook
-                  </Button>
-                </CardContent>
-              </Card>
-            </ListItem>
-          ))}
-        </List>
-      )}
+      {/* Content */}
+      <Container maxWidth="md" sx={{ pb: 8 }}>
+        {yearBooksLoading ? (
+          <LinearProgress sx={{ borderRadius: 1, mt: 2 }} />
+        ) : yearBooks.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Box sx={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              bgcolor: 'rgba(108, 99, 255, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 3
+            }}>
+              <CreateIcon sx={{ fontSize: 36, color: 'primary.main' }} />
+            </Box>
+            <Typography variant="h6" sx={{ mb: 1, color: 'text.secondary' }}>
+              No yearbooks yet
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+              Be the first to create one
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <Typography variant="overline" sx={{
+              color: 'text.secondary',
+              letterSpacing: 2,
+              display: 'block',
+              mb: 2
+            }}>
+              {yearBooks.length} yearbook{yearBooks.length !== 1 ? 's' : ''}
+            </Typography>
 
-      {/* Create Yearbook Dialog */}
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)}>
-        <form onSubmit={e => {
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              gap: 2
+            }}>
+              {yearBooks.map((yb, i) => (
+                <Card key={i} sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <CardContent sx={{ flex: 1, p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                      <Avatar sx={{
+                        width: 40,
+                        height: 40,
+                        bgcolor: keyToColor(yb.creatorIdentityKey),
+                        fontSize: 16,
+                        fontWeight: 700
+                      }}>
+                        {yb.creatorIdentityKey.slice(2, 4).toUpperCase()}
+                      </Avatar>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                          {truncateKey(yb.creatorIdentityKey)}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          owner
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Chip
+                      icon={<DrawIcon sx={{ fontSize: '16px !important' }} />}
+                      label={`${yb.entryCount} signature${yb.entryCount !== 1 ? 's' : ''}`}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        mb: 2.5,
+                        borderColor: yb.entryCount > 0 ? 'secondary.dark' : 'rgba(255,255,255,0.12)',
+                        color: yb.entryCount > 0 ? 'secondary.light' : 'text.secondary'
+                      }}
+                    />
+
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      startIcon={<DrawIcon />}
+                      onClick={() => setSignOpen(i)}
+                      sx={{
+                        background: 'linear-gradient(135deg, #FF6B9D, #FF8FB3)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #EE5A8C, #FF7EA5)',
+                          boxShadow: '0 6px 24px rgba(255, 107, 157, 0.3)'
+                        }
+                      }}
+                    >
+                      Sign This Yearbook
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          </>
+        )}
+      </Container>
+
+      {/* Create Dialog */}
+      <Dialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <form onSubmit={(e: FormEvent<HTMLFormElement>) => {
           e.preventDefault()
           void (async () => {
             try { await handleCreateSubmit(e) } catch (err) { console.error(err) }
           })()
         }}>
-          <DialogTitle>Create a Yearbook</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Create a Yearbook</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Start your on-chain yearbook. Others will be able to sign it with their messages.
+              Start your on-chain yearbook. Once created, anyone can sign it with their wallet.
             </DialogContentText>
           </DialogContent>
-          {createLoading ? <LoadingBar /> : (
-            <DialogActions>
-              <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
+          {createLoading ? <LinearProgress sx={{ mx: 3, mb: 2, borderRadius: 1 }} /> : (
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={() => setCreateOpen(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
               <Button type="submit" variant="contained">Create</Button>
             </DialogActions>
           )}
         </form>
       </Dialog>
 
-      {/* Sign Yearbook Dialog */}
-      <Dialog open={signOpen !== null} onClose={() => { setSignOpen(null); setSignMessage('') }}>
-        <DialogTitle>Sign This Yearbook</DialogTitle>
+      {/* Sign Dialog */}
+      <Dialog
+        open={signOpen !== null}
+        onClose={() => { setSignOpen(null); setSignMessage('') }}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Sign This Yearbook</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            Leave your mark on this yearbook.
+          <DialogContentText sx={{ mb: 2.5 }}>
+            Leave a message that gets recorded as a Bitcoin transaction.
           </DialogContentText>
           <TextField
             autoFocus
@@ -393,22 +500,38 @@ const App: React.FC = () => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSignMessage(e.target.value)}
             multiline
             rows={3}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '&.Mui-focused fieldset': { borderColor: 'secondary.main' }
+              }
+            }}
           />
         </DialogContent>
-        {signLoading ? <LoadingBar /> : (
-          <DialogActions>
-            <Button onClick={() => { setSignOpen(null); setSignMessage('') }}>Cancel</Button>
+        {signLoading ? <LinearProgress sx={{ mx: 3, mb: 2, borderRadius: 1 }} /> : (
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button onClick={() => { setSignOpen(null); setSignMessage('') }} sx={{ color: 'text.secondary' }}>
+              Cancel
+            </Button>
             <Button
               variant="contained"
               disabled={!signMessage.trim()}
               onClick={() => signOpen !== null && handleSign(signOpen)}
+              sx={{
+                background: 'linear-gradient(135deg, #FF6B9D, #FF8FB3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #EE5A8C, #FF7EA5)',
+                  boxShadow: '0 6px 24px rgba(255, 107, 157, 0.3)'
+                },
+                '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)' }
+              }}
             >
               Sign
             </Button>
           </DialogActions>
         )}
       </Dialog>
-    </>
+    </Box>
   )
 }
 

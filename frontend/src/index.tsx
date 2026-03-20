@@ -2,7 +2,7 @@ import ReactDOM from 'react-dom/client'
 import { CssBaseline } from '@mui/material'
 import { ThemeProvider } from '@mui/material/styles'
 import App from './App'
-import web3Theme from './theme'
+import theme from './theme'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -15,7 +15,7 @@ if (rootElement === null) {
 const root = ReactDOM.createRoot(rootElement)
 
 root.render(
-  <ThemeProvider theme={web3Theme}>
+  <ThemeProvider theme={theme}>
     <ToastContainer
       position="top-center"
       autoClose={5000} // auto close after 5 seconds

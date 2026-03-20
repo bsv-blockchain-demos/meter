@@ -1,39 +1,95 @@
 import { createTheme } from '@mui/material/styles'
 
-// Define a custom theme with a dark background
-
-// Define custom spacing function compatible with Spacing type
-const customSpacing = (factor: number): string => `${8 * factor}px`
-
-// Create custom theme using createTheme
-const web3Theme = createTheme({
+const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#00d1b2'
+      main: '#6C63FF',
+      light: '#9D97FF',
+      dark: '#4A42CC'
     },
     secondary: {
-      main: '#7e57c2'
+      main: '#FF6B9D',
+      light: '#FF9DC0',
+      dark: '#CC4A7A'
     },
     background: {
-      default: '#121212',
-      paper: '#242424'
+      default: '#0A0A1A',
+      paper: '#141428'
     },
-    error: {
-      main: '#ff3860'
+    text: {
+      primary: '#EEEEF0',
+      secondary: '#9898B0'
     }
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 700
+    fontFamily: '"Inter", "Roboto", "Helvetica", sans-serif',
+    h3: {
+      fontWeight: 800,
+      letterSpacing: '-0.02em'
+    },
+    h5: {
+      fontWeight: 700,
+      letterSpacing: '-0.01em'
+    },
+    h6: {
+      fontWeight: 600
+    },
+    body2: {
+      color: '#9898B0'
     },
     button: {
-      textTransform: 'none'
+      textTransform: 'none',
+      fontWeight: 600
     }
   },
-  // Override default MUI spacing with custom spacing function
-  spacing: customSpacing
+  shape: {
+    borderRadius: 12
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
+          padding: '10px 24px'
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0 4px 20px rgba(108, 99, 255, 0.3)'
+          }
+        }
+      }
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+          border: '1px solid rgba(255, 255, 255, 0.06)',
+          transition: 'border-color 0.2s, box-shadow 0.2s',
+          '&:hover': {
+            borderColor: 'rgba(108, 99, 255, 0.3)',
+            boxShadow: '0 4px 24px rgba(108, 99, 255, 0.08)'
+          }
+        }
+      }
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          backgroundImage: 'none',
+          border: '1px solid rgba(255, 255, 255, 0.08)'
+        }
+      }
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontWeight: 600
+        }
+      }
+    }
+  }
 })
 
-export default web3Theme // Export custom theme
+export default theme
