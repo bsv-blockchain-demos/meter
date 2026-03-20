@@ -48,6 +48,7 @@ const anyoneWallet = new ProtoWallet('anyone')
 const walletClient = new WalletClient()
 const NETWORK_PRESET = 'local'
 const OVERLAY_URL = 'http://localhost:8080'
+const httpFacilitator = new HTTPSOverlayBroadcastFacilitator(fetch, true)
 
 // These are some basic styling rules for the React application.
 // We are using MUI (https://mui.com) for all of our UI components (i.e. buttons and dialogs etc.).
@@ -131,6 +132,7 @@ const App: React.FC = () => {
 
       const args: SHIPBroadcasterConfig = {
         networkPreset: NETWORK_PRESET,
+        facilitator: httpFacilitator,
         resolver: new LookupResolver({
           hostOverrides: {
             'ls_ship': [OVERLAY_URL],
@@ -351,6 +353,7 @@ const App: React.FC = () => {
 
       const args: SHIPBroadcasterConfig = {
         networkPreset: NETWORK_PRESET,
+        facilitator: httpFacilitator,
         resolver: new LookupResolver({
           hostOverrides: { 'tm_meter': [OVERLAY_URL] }
         }),
@@ -476,6 +479,7 @@ const App: React.FC = () => {
 
       const args: SHIPBroadcasterConfig = {
         networkPreset: NETWORK_PRESET,
+        facilitator: httpFacilitator,
         resolver: new LookupResolver({
           hostOverrides: { 'tm_meter': [OVERLAY_URL] }
         }),
