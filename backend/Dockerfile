@@ -11,6 +11,6 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/artifacts ./artifacts
 COPY --from=builder /app/package.json /app/package-lock.json ./
 RUN npm ci --omit=dev
-EXPOSE 3001
-ENV PORT=3001
+EXPOSE 8080
+ENV PORT=8080
 CMD ["node", "dist/esm/src/server.js"]

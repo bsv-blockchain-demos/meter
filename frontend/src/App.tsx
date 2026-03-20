@@ -35,8 +35,8 @@ import {
   ProtoWallet,
   WalletClient,
   SHIPBroadcasterConfig,
-  HTTPSOverlayBroadcastFacilitator,
-  CreateActionArgs
+  CreateActionArgs,
+  HTTPSOverlayBroadcastFacilitator
 } from '@bsv/sdk'
 import { Card } from '@mui/material'
 import { CardContent } from '@mui/material'
@@ -46,7 +46,8 @@ const anyoneWallet = new ProtoWallet('anyone')
 
 // Local wallet
 const walletClient = new WalletClient()
-const NETWORK_PRESET = 'local' // Change to 'mainnet' for production usage
+const NETWORK_PRESET = 'local'
+const OVERLAY_URL = 'http://localhost:8080'
 
 // These are some basic styling rules for the React application.
 // We are using MUI (https://mui.com) for all of our UI components (i.e. buttons and dialogs etc.).
@@ -129,7 +130,17 @@ const App: React.FC = () => {
       const txid = transaction.id('hex')
 
       const args: SHIPBroadcasterConfig = {
-        networkPreset: NETWORK_PRESET
+        networkPreset: NETWORK_PRESET,
+        resolver: new LookupResolver({
+          hostOverrides: {
+            'ls_ship': [OVERLAY_URL],
+            'ls_slap': [OVERLAY_URL],
+            'ls_meter': [OVERLAY_URL]
+          }
+        }),
+        requireAcknowledgmentFromSpecificHostsForTopics: {
+          'tm_meter': [OVERLAY_URL]
+        }
       }
       const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
       const broadcasterResult = await broadcaster.broadcast(transaction)
@@ -167,7 +178,10 @@ const App: React.FC = () => {
         let lookupResult: any = undefined
 
         try {
-          const resolver = new LookupResolver({ networkPreset: NETWORK_PRESET })
+          const resolver = new LookupResolver({
+            networkPreset: NETWORK_PRESET,
+            hostOverrides: { 'ls_meter': [OVERLAY_URL] }
+          })
           lookupResult = await resolver.query({
             service: 'ls_meter',
             query: { findAll: true }
@@ -335,18 +349,16 @@ const App: React.FC = () => {
       const transaction = Transaction.fromAtomicBEEF(newMeterToken.tx)
       const txid = transaction.id('hex')
 
-      // Configure SHIP Broadcaster with allowHTTP set to true
-      const facilitator = new HTTPSOverlayBroadcastFacilitator(fetch, true)
-      facilitator.allowHTTP = true // Manually override in case constructor ignores it
-
       const args: SHIPBroadcasterConfig = {
         networkPreset: NETWORK_PRESET,
-        facilitator,
-        requireAcknowledgmentFromAnyHostForTopics: 'any'
+        resolver: new LookupResolver({
+          hostOverrides: { 'tm_meter': [OVERLAY_URL] }
+        }),
+        requireAcknowledgmentFromSpecificHostsForTopics: {
+          'tm_meter': [OVERLAY_URL]
+        }
       }
       const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
-
-      console.log('handleIncrement: broadcaster:', broadcaster)
 
       // Broadcast the transaction
       const broadcasterResult = await broadcaster.broadcast(transaction)
@@ -462,18 +474,16 @@ const App: React.FC = () => {
       const transaction = Transaction.fromAtomicBEEF(newMeterToken.tx)
       const txid = transaction.id('hex')
 
-      // Configure SHIP Broadcaster with allowHTTP set to true
-      const facilitator = new HTTPSOverlayBroadcastFacilitator(fetch, true)
-      facilitator.allowHTTP = true // Manually override in case constructor ignores it
-
       const args: SHIPBroadcasterConfig = {
         networkPreset: NETWORK_PRESET,
-        facilitator,
-        requireAcknowledgmentFromAnyHostForTopics: 'any'
+        resolver: new LookupResolver({
+          hostOverrides: { 'tm_meter': [OVERLAY_URL] }
+        }),
+        requireAcknowledgmentFromSpecificHostsForTopics: {
+          'tm_meter': [OVERLAY_URL]
+        }
       }
       const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
-
-      console.log('handleDecrement: broadcaster:', broadcaster)
 
       // Broadcast the transaction
       const broadcasterResult = await broadcaster.broadcast(transaction)
