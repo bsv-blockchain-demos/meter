@@ -13,11 +13,14 @@ async function main () {
   server.configurePort(PORT)
   server.configureNetwork(process.env.BSV_NETWORK === 'test' ? 'test' : 'main')
 
+  await server.configureKnex(process.env.KNEX_URL ?? 'mysql://root:example@localhost:3306/meter')
+
   await server.configureMongo(MONGO_URL)
 
   server.configureTopicManager('tm_meter', new MeterTopicManager())
   server.configureLookupServiceWithMongo('ls_meter', (db) => MeterLookupServiceFactory(db))
 
+  await server.configureEngine()
   await server.start()
   console.log(`Meter overlay service listening on port ${PORT}`)
 }

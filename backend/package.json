@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@bsv/overlay": "^2.0.2",
+    "mysql2": "^3.14.0",
     "@bsv/overlay-express": "^2.1.1",
     "@bsv/sdk": "^2.0.13",
     "mongodb": "^7.1.0",

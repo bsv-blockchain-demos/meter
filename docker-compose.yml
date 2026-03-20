@@ -1,6 +1,6 @@
 services:
   mongodb:
-    image: mongo:6
+    image: mongo:8
     ports:
       - "27017:27017"
     environment:
@@ -8,6 +8,26 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: mongosh --eval "db.runCommand('ping').ok" --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mysql:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: meter
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: mysqladmin ping -h localhost -u root -pexample
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   meter-back:
     build:
@@ -17,10 +37,14 @@ services:
       - "3001:3001"
     environment:
       PORT: "3001"
+      KNEX_URL: mysql://root:example@mysql:3306/meter
       MONGO_URL: mongodb://root:example@mongodb:27017
       BSV_NETWORK: main
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
 
   meter-front:
     build:
@@ -33,3 +57,4 @@ services:
 
 volumes:
   mongo-data:
+  mysql-data:
