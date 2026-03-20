@@ -28,7 +28,6 @@
     "test:coverage": "npm run build && jest --coverage",
     "lint": "ts-standard --fix src/**/*.ts",
     "build": "tsc -b",
-    "prepublish": "npm run build",
     "compile": "tsx src/contracts/compile.ts",
     "start": "node dist/esm/src/server.js",
     "doc": "ts2md --inputFilename=mod.ts --outputFilename=API.md --filenameSubstring=API --firstHeadingLevel=1"
