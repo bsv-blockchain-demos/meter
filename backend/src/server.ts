@@ -1,26 +1,37 @@
 import OverlayExpress from '@bsv/overlay-express'
+import { ARC } from '@bsv/sdk'
 import MeterTopicManager from './topic-managers/MeterTopicManager.js'
 import MeterLookupServiceFactory from './lookup-services/MeterLookupServiceFactory.js'
+import ChainTracksClient from './ChainTracksClient.js'
 
-const PORT = Number(process.env.PORT ?? 3001)
+const PORT = Number(process.env.PORT ?? 8080)
 const MONGO_URL = process.env.MONGO_URL ?? 'mongodb://localhost:27017'
 const SERVER_PRIVATE_KEY = process.env.SERVER_PRIVATE_KEY ?? '0000000000000000000000000000000000000000000000000000000000000001'
 const HOSTING_DOMAIN = process.env.HOSTING_DOMAIN ?? 'localhost'
+const ARC_URL = process.env.ARC_URL ?? 'https://arcade-us-1.bsvb.tech'
+const CHAINTRACKS_URL = process.env.CHAINTRACKS_URL ?? 'https://arcade-us-1.bsvb.tech/chaintracks'
+const ENABLE_GASP_SYNC = process.env.ENABLE_GASP_SYNC === 'true'
 
 async function main () {
   const server = new OverlayExpress('meter', SERVER_PRIVATE_KEY, HOSTING_DOMAIN)
 
   server.configurePort(PORT)
   server.configureNetwork(process.env.BSV_NETWORK === 'test' ? 'test' : 'main')
+  server.configureChainTracker(new ChainTracksClient(CHAINTRACKS_URL))
 
   await server.configureKnex(process.env.KNEX_URL ?? 'mysql://root:example@localhost:3306/meter')
-
   await server.configureMongo(MONGO_URL)
 
   server.configureTopicManager('tm_meter', new MeterTopicManager())
   server.configureLookupServiceWithMongo('ls_meter', (db) => MeterLookupServiceFactory(db))
 
-  await server.configureEngine()
+  server.configureEngineParams({
+    broadcaster: new ARC(ARC_URL),
+    syncConfiguration: ENABLE_GASP_SYNC ? undefined : {},
+    suppressDefaultSyncAdvertisements: !ENABLE_GASP_SYNC
+  })
+
+  await server.configureEngine(!ENABLE_GASP_SYNC)
   await server.start()
   console.log(`Meter overlay service listening on port ${PORT}`)
 }
