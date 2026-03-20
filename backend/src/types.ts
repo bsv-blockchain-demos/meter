@@ -1,8 +1,8 @@
-export interface MeterRecord {
+export interface YearBookRecord {
   txid: string
   outputIndex: number
-  value: number
   creatorIdentityKey: string
+  entryCount: number
   createdAt: Date
 }
 

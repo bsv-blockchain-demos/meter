@@ -3,7 +3,7 @@ WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ .
-COPY backend/artifacts/Counter.runar.json src/artifacts/Counter.runar.json
+COPY backend/artifacts/YearBook.runar.json src/artifacts/YearBook.runar.json
 RUN npx webpack --config webpack.prod.js
 
 FROM nginx:alpine

@@ -1,7 +1,7 @@
 import OverlayExpress from '@bsv/overlay-express'
 import { ARC } from '@bsv/sdk'
-import MeterTopicManager from './topic-managers/MeterTopicManager.js'
-import MeterLookupServiceFactory from './lookup-services/MeterLookupServiceFactory.js'
+import YearBookTopicManager from './topic-managers/YearBookTopicManager.js'
+import YearBookLookupServiceFactory from './lookup-services/YearBookLookupServiceFactory.js'
 import ChainTracksClient from './ChainTracksClient.js'
 
 const PORT = Number(process.env.PORT ?? 8080)
@@ -13,7 +13,7 @@ const CHAINTRACKS_URL = process.env.CHAINTRACKS_URL ?? 'https://arcade-us-1.bsvb
 const ENABLE_GASP_SYNC = process.env.ENABLE_GASP_SYNC === 'true'
 
 async function main () {
-  const server = new OverlayExpress('meter', SERVER_PRIVATE_KEY, HOSTING_DOMAIN)
+  const server = new OverlayExpress('yearbook', SERVER_PRIVATE_KEY, HOSTING_DOMAIN)
 
   server.configurePort(PORT)
   server.configureNetwork(process.env.BSV_NETWORK === 'test' ? 'test' : 'main')
@@ -22,8 +22,8 @@ async function main () {
   await server.configureKnex(process.env.KNEX_URL ?? 'mysql://root:example@localhost:3306/meter')
   await server.configureMongo(MONGO_URL)
 
-  server.configureTopicManager('tm_meter', new MeterTopicManager())
-  server.configureLookupServiceWithMongo('ls_meter', (db) => MeterLookupServiceFactory(db))
+  server.configureTopicManager('tm_yearbook', new YearBookTopicManager())
+  server.configureLookupServiceWithMongo('ls_yearbook', (db) => YearBookLookupServiceFactory(db))
 
   server.configureEngineParams({
     broadcaster: new ARC(ARC_URL),
@@ -33,7 +33,7 @@ async function main () {
 
   await server.configureEngine(!ENABLE_GASP_SYNC)
   await server.start()
-  console.log(`Meter overlay service listening on port ${PORT}`)
+  console.log(`YearBook overlay service listening on port ${PORT}`)
 }
 
 main().catch(err => {

@@ -6,8 +6,8 @@ export interface Token {
   satoshis: SatoshiValue
 }
 
-export interface Meter {
-  value: number
-  token: Token
+export interface YearBook {
   creatorIdentityKey: PubKeyHex
+  entryCount: number
+  token: Token
 }

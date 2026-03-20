@@ -16,45 +16,41 @@ import {
   LinearProgress,
   Typography,
   IconButton,
-  Grid
+  Grid,
+  Card,
+  CardContent,
+  TextField,
+  Chip
 } from '@mui/material'
 import { styled } from '@mui/system'
 import AddIcon from '@mui/icons-material/Add'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import useAsyncEffect from 'use-async-effect'
-import { Meter, Token } from './types/types'
+import { YearBook, Token } from './types/types'
 import { RunarContract, extractStateFromScript } from 'runar-sdk'
 import type { RunarArtifact } from 'runar-sdk'
-import counterArtifact from './artifacts/Counter.runar.json'
-const artifact = counterArtifact as unknown as RunarArtifact
+import yearBookArtifact from './artifacts/YearBook.runar.json'
+const artifact = yearBookArtifact as unknown as RunarArtifact
 import {
   SHIPBroadcaster,
   LookupResolver,
   Transaction,
   Utils,
-  ProtoWallet,
   WalletClient,
   SHIPBroadcasterConfig,
   CreateActionArgs,
   HTTPSOverlayBroadcastFacilitator
 } from '@bsv/sdk'
-import { Card } from '@mui/material'
-import { CardContent } from '@mui/material'
 
-// Only used to verify signature
-const anyoneWallet = new ProtoWallet('anyone')
-
-// Local wallet
 const walletClient = new WalletClient()
 const NETWORK_PRESET = 'local'
 const OVERLAY_URL = 'http://localhost:8080'
 const httpFacilitator = new HTTPSOverlayBroadcastFacilitator(fetch, true)
 
-// These are some basic styling rules for the React application.
-// We are using MUI (https://mui.com) for all of our UI components (i.e. buttons and dialogs etc.).
-const AppBarPlaceholder = styled('div')({
-  height: '4em'
-})
+const TOPIC = 'tm_yearbook'
+const SERVICE = 'ls_yearbook'
+
+const AppBarPlaceholder = styled('div')({ height: '4em' })
 
 const NoItems = styled(Grid)({
   margin: 'auto',
@@ -69,102 +65,76 @@ const AddMoreFab = styled(Fab)({
   zIndex: 10
 })
 
-const LoadingBar = styled(LinearProgress)({
-  margin: '1em'
-})
+const LoadingBar = styled(LinearProgress)({ margin: '1em' })
 
-const GitHubIconStyle = styled(IconButton)({
-  color: '#ffffff'
+const broadcasterConfig = (): SHIPBroadcasterConfig => ({
+  networkPreset: NETWORK_PRESET,
+  facilitator: httpFacilitator,
+  resolver: new LookupResolver({
+    hostOverrides: {
+      'ls_ship': [OVERLAY_URL],
+      'ls_slap': [OVERLAY_URL],
+      [SERVICE]: [OVERLAY_URL]
+    }
+  }),
+  requireAcknowledgmentFromSpecificHostsForTopics: {
+    [TOPIC]: [OVERLAY_URL]
+  }
 })
 
 const App: React.FC = () => {
-  // These are some state variables that control the app's interface.
-  const [createOpen, setCreateOpen] = useState<boolean>(false)
-  const [createLoading, setCreateLoading] = useState<boolean>(false)
-  const [metersLoading, setMetersLoading] = useState<boolean>(true)
-  const [meters, setMeters] = useState<Meter[]>([])
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createLoading, setCreateLoading] = useState(false)
+  const [signOpen, setSignOpen] = useState<number | null>(null)
+  const [signMessage, setSignMessage] = useState('')
+  const [signLoading, setSignLoading] = useState(false)
+  const [yearBooksLoading, setYearBooksLoading] = useState(true)
+  const [yearBooks, setYearBooks] = useState<YearBook[]>([])
 
-  // Creates a new meter.
-  // This function will run when the user clicks "OK" in the creation dialog.
-
-  const handleCreateSubmit = async (
-    e: FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const handleCreateSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault()
     try {
       setCreateLoading(true)
-      const publicKey = (await walletClient.getPublicKey({ identityKey: true }))
-        .publicKey
+      const publicKey = (await walletClient.getPublicKey({ identityKey: true })).publicKey
 
-      const signature = Utils.toHex(
-        (
-          await walletClient.createSignature({
-            data: [1],
-            protocolID: [0, 'meter'],
-            keyID: '1',
-            counterparty: 'anyone'
-          })
-        ).signature
-      )
+      const yearbook = new RunarContract(artifact, [publicKey, BigInt(0)])
+      const lockingScript = yearbook.getLockingScript()
 
-      const counter = new RunarContract(artifact, [BigInt(1), publicKey, signature])
-      const lockingScript = counter.getLockingScript()
-
-      const newMeterToken = await walletClient.createAction({
-        description: 'Create a meter',
-        outputs: [
-          {
-            basket: 'meter tokens',
-            lockingScript,
-            satoshis: 1,
-            outputDescription: 'Meter output'
-          }
-        ],
+      const result = await walletClient.createAction({
+        description: 'Create a yearbook',
+        outputs: [{
+          basket: 'yearbook tokens',
+          lockingScript,
+          satoshis: 1,
+          outputDescription: 'YearBook output'
+        }],
         options: { randomizeOutputs: false }
       })
 
-      if (!newMeterToken.tx) {
-        throw new Error('Transaction is undefined')
-      }
+      if (!result.tx) throw new Error('Transaction is undefined')
 
-      const transaction = Transaction.fromAtomicBEEF(newMeterToken.tx)
+      const transaction = Transaction.fromAtomicBEEF(result.tx)
       const txid = transaction.id('hex')
 
-      const args: SHIPBroadcasterConfig = {
-        networkPreset: NETWORK_PRESET,
-        facilitator: httpFacilitator,
-        resolver: new LookupResolver({
-          hostOverrides: {
-            'ls_ship': [OVERLAY_URL],
-            'ls_slap': [OVERLAY_URL],
-            'ls_meter': [OVERLAY_URL]
-          }
-        }),
-        requireAcknowledgmentFromSpecificHostsForTopics: {
-          'tm_meter': [OVERLAY_URL]
-        }
-      }
-      const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
-      const broadcasterResult = await broadcaster.broadcast(transaction)
-      console.log('broadcasterResult:', broadcasterResult)
-      if (broadcasterResult.status === 'error') {
+      const broadcaster = new SHIPBroadcaster([TOPIC], broadcasterConfig())
+      const broadcastResult = await broadcaster.broadcast(transaction)
+      console.log('broadcastResult:', broadcastResult)
+      if (broadcastResult.status === 'error') {
         throw new Error('Transaction failed to broadcast')
       }
-      toast.dark('Meter successfully created!')
-      setMeters(originalMeters => [
-        {
-          value: 1,
-          creatorIdentityKey: publicKey,
-          token: {
-            atomicBeefTX: Utils.toHex(newMeterToken.tx!),
-            txid,
-            outputIndex: 0,
-            lockingScript: lockingScript,
-            satoshis: 1
-          } as Token
-        },
-        ...originalMeters
-      ])
+
+      toast.dark('Yearbook created!')
+      setYearBooks(prev => [{
+        creatorIdentityKey: publicKey,
+        entryCount: 0,
+        token: {
+          atomicBeefTX: Utils.toHex(result.tx!),
+          txid,
+          outputIndex: 0,
+          lockingScript,
+          satoshis: 1
+        } as Token
+      }, ...prev])
       setCreateOpen(false)
     } catch (e) {
       toast.error((e as Error).message)
@@ -175,501 +145,268 @@ const App: React.FC = () => {
   }
 
   useAsyncEffect(() => {
-    const fetchMeters = async () => {
+    const fetchYearBooks = async () => {
       try {
-        let lookupResult: any = undefined
+        const resolver = new LookupResolver({
+          networkPreset: NETWORK_PRESET,
+          hostOverrides: { [SERVICE]: [OVERLAY_URL] }
+        })
+        const lookupResult = await resolver.query({
+          service: SERVICE,
+          query: { findAll: true }
+        }) as any
 
-        try {
-          const resolver = new LookupResolver({
-            networkPreset: NETWORK_PRESET,
-            hostOverrides: { 'ls_meter': [OVERLAY_URL] }
-          })
-          lookupResult = await resolver.query({
-            service: 'ls_meter',
-            query: { findAll: true }
-          })
-
-          // Check the result type
-          if (!lookupResult || lookupResult.type !== 'output-list') {
-            throw new Error('Wrong result type!')
-          }
-        } catch (e) {
-          console.error('Lookup error:', e)
-          return // Return early if lookup fails to prevent further execution
+        if (!lookupResult || lookupResult.type !== 'output-list' || !lookupResult.outputs) {
+          console.error('No outputs found')
+          return
         }
 
-        // Ensure that lookupResult is valid before accessing `outputs`
-        if (!lookupResult?.outputs) {
-          console.error('No outputs found in lookupResult')
-          return // Return early if `outputs` is not available
-        }
-
-        const parsedResults: Meter[] = []
-
-        // Process each result
+        const parsed: YearBook[] = []
         for (const result of lookupResult.outputs) {
           try {
             const tx = Transaction.fromBEEF(result.beef)
-            const script = tx.outputs[
-              Number(result.outputIndex)
-            ].lockingScript.toHex()
-
+            const script = tx.outputs[Number(result.outputIndex)].lockingScript.toHex()
             const state = extractStateFromScript(artifact, script)
-            if (!state) throw new Error('Failed to extract state')
+            if (!state) continue
 
-            console.log('state.count:', state.count)
-            console.log('state.creatorIdentityKey:', state.creatorIdentityKey)
-            console.log(
-              'tx.outputs[Number(result.outputIndex)]:',
-              tx.outputs[Number(result.outputIndex)]
-            )
-
-            // Signature verification
-            const verifyResult = await anyoneWallet.verifySignature({
-              protocolID: [0, 'meter'],
-              keyID: '1',
-              counterparty: String(state.creatorIdentityKey),
-              data: [1],
-              signature: Utils.toArray(String(state.creatorSignature), 'hex')
-            })
-
-            if (!verifyResult.valid) {
-              throw new Error('Signature invalid')
-            }
-
-            const atomicBeefTX = Utils.toHex(tx.toAtomicBEEF())
-
-            console.log('fetchMeters Transaction atomicBeefTX:', atomicBeefTX)
-
-            parsedResults.push({
-              value: Number(state.count as bigint),
+            parsed.push({
               creatorIdentityKey: String(state.creatorIdentityKey),
+              entryCount: Number(state.entryCount as bigint),
               token: {
-                atomicBeefTX,
+                atomicBeefTX: Utils.toHex(tx.toAtomicBEEF()),
                 txid: tx.id('hex'),
                 outputIndex: result.outputIndex,
                 lockingScript: script,
-                satoshis: tx.outputs[Number(result.outputIndex)]
-                  .satoshis as number
+                satoshis: tx.outputs[Number(result.outputIndex)].satoshis as number
               } as Token
             })
           } catch (error) {
-            console.error('Failed to parse Meter. Error:', error)
+            console.error('Failed to parse YearBook:', error)
           }
         }
-
-        // Set the meters data
-        setMeters(parsedResults)
+        setYearBooks(parsed)
       } catch (error) {
-        console.error('Failed to load Meters:', error)
+        console.error('Failed to load YearBooks:', error)
       } finally {
-        setMetersLoading(false)
+        setYearBooksLoading(false)
       }
     }
-
-    fetchMeters()
+    fetchYearBooks()
   }, [])
 
-  const handleIncrement = async (meterIndex: number) => {
+  const handleSign = async (index: number) => {
     try {
-      // Validate meter index
-      if (meterIndex < 0 || meterIndex >= meters.length) {
-        throw new Error(`Invalid meter index: ${meterIndex}`)
+      setSignLoading(true)
+      const yb = yearBooks[index]
+      if (!yb?.token?.atomicBeefTX || !yb.token.lockingScript || !yb.token.txid) {
+        throw new Error('Missing token data')
       }
 
-      const meter = meters[meterIndex]
-
-      // Ensure token data is available before proceeding
-      if (
-        !meter?.token?.atomicBeefTX ||
-        !meter.token.lockingScript ||
-        !meter.token.txid
-      ) {
-        throw new Error(
-          `Missing required token data for meter index ${meterIndex}`
-        )
-      }
-
-      // Create Runar Contract instance from current UTXO
+      // Build next state (entryCount + 1)
       const contract = RunarContract.fromUtxo(artifact, {
-        txid: meter.token.txid,
-        outputIndex: meter.token.outputIndex,
-        satoshis: meter.token.satoshis,
-        script: meter.token.lockingScript
+        txid: yb.token.txid,
+        outputIndex: yb.token.outputIndex,
+        satoshis: yb.token.satoshis,
+        script: yb.token.lockingScript
       })
 
-      // Build next state
       const nextContract = RunarContract.fromUtxo(artifact, {
-        txid: meter.token.txid,
-        outputIndex: meter.token.outputIndex,
-        satoshis: meter.token.satoshis,
-        script: meter.token.lockingScript
+        txid: yb.token.txid,
+        outputIndex: yb.token.outputIndex,
+        satoshis: yb.token.satoshis,
+        script: yb.token.lockingScript
       })
-      const nextState = { ...contract.state, count: (contract.state.count as bigint) + 1n }
-      nextContract.setState(nextState)
+      nextContract.setState({
+        ...contract.state,
+        entryCount: (contract.state.entryCount as bigint) + 1n
+      })
       const nextScript = nextContract.getLockingScript()
+      const unlockingScript = contract.buildUnlockingScript('sign', [])
 
-      const unlockingScript = contract.buildUnlockingScript('increment', [])
+      const atomicBeef = Utils.toArray(yb.token.atomicBeefTX, 'hex')
 
-      // Convert from hex string
-      const atomicBeef = Utils.toArray(meter.token.atomicBeefTX, 'hex')
-
-      // Prepare broadcast parameters
-      const broadcastActionParams: CreateActionArgs = {
-        inputs: [
-          {
-            inputDescription: 'Increment meter token',
-            outpoint: `${meter.token.txid}.${meter.token.outputIndex}`,
-            unlockingScript
-          }
-        ],
+      const actionParams: CreateActionArgs = {
+        inputs: [{
+          inputDescription: 'Sign yearbook',
+          outpoint: `${yb.token.txid}.${yb.token.outputIndex}`,
+          unlockingScript
+        }],
         inputBEEF: atomicBeef,
-        outputs: [
-          {
-            basket: 'meter tokens',
-            lockingScript: nextScript,
-            satoshis: meter.token.satoshis,
-            outputDescription: 'Counter token'
-          }
-        ],
-        description: `Increment a counter`,
+        outputs: [{
+          basket: 'yearbook tokens',
+          lockingScript: nextScript,
+          satoshis: yb.token.satoshis,
+          outputDescription: 'YearBook output'
+        }],
+        description: `Sign a yearbook: ${signMessage}`,
         options: { acceptDelayedBroadcast: false, randomizeOutputs: false }
       }
 
-      // Create Action for Meter Increment
-      const newMeterToken = await walletClient.createAction(
-        broadcastActionParams
-      )
+      const result = await walletClient.createAction(actionParams)
+      if (!result.tx) throw new Error('Transaction creation failed')
 
-      if (!newMeterToken.tx) {
-        throw new Error(
-          'Transaction creation failed: newMeterToken.tx is undefined'
-        )
-      }
-
-      // Convert to Transaction format
-      const transaction = Transaction.fromAtomicBEEF(newMeterToken.tx)
+      const transaction = Transaction.fromAtomicBEEF(result.tx)
       const txid = transaction.id('hex')
 
-      const args: SHIPBroadcasterConfig = {
-        networkPreset: NETWORK_PRESET,
-        facilitator: httpFacilitator,
-        resolver: new LookupResolver({
-          hostOverrides: { 'tm_meter': [OVERLAY_URL] }
-        }),
-        requireAcknowledgmentFromSpecificHostsForTopics: {
-          'tm_meter': [OVERLAY_URL]
-        }
-      }
-      const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
+      const broadcaster = new SHIPBroadcaster([TOPIC], broadcasterConfig())
+      const broadcastResult = await broadcaster.broadcast(transaction)
 
-      // Broadcast the transaction
-      const broadcasterResult = await broadcaster.broadcast(transaction)
-
-      console.log('broadcasterResult.txid:', broadcasterResult.txid)
-      if (broadcasterResult.status === 'error') {
-        console.error(
-          'broadcasterResult.description:',
-          broadcasterResult.description
-        )
+      if (broadcastResult.status === 'error') {
+        console.error('Broadcast error:', broadcastResult.description)
       }
 
-      // Update state with new meter transaction details
-      setMeters(originalMeters => {
-        const copy = [...originalMeters]
-        copy[meterIndex] = {
-          ...copy[meterIndex],
-          value: copy[meterIndex].value + 1,
+      toast.dark('Yearbook signed!')
+      setYearBooks(prev => {
+        const copy = [...prev]
+        copy[index] = {
+          ...copy[index],
+          entryCount: copy[index].entryCount + 1,
           token: {
-            atomicBeefTX: Utils.toHex(newMeterToken.tx!),
+            atomicBeefTX: Utils.toHex(result.tx!),
             txid,
             outputIndex: 0,
             lockingScript: nextScript,
-            satoshis: meter.token.satoshis
+            satoshis: yb.token.satoshis
           } as Token
         }
         return copy
       })
+      setSignOpen(null)
+      setSignMessage('')
     } catch (error) {
-      console.error('Error in meter increment:', (error as Error).message)
-      throw new Error(`Meter increment failed: ${(error as Error).message}`)
-    }
-  }
-
-  const handleDecrement = async (meterIndex: number) => {
-    try {
-      // Validate meter index
-      if (meterIndex < 0 || meterIndex >= meters.length) {
-        throw new Error(`Invalid meter index: ${meterIndex}`)
-      }
-
-      const meter = meters[meterIndex]
-
-      // Ensure token data is available before proceeding
-      if (
-        !meter?.token?.atomicBeefTX ||
-        !meter.token.lockingScript ||
-        !meter.token.txid
-      ) {
-        throw new Error(
-          `Missing required token data for meter index ${meterIndex}`
-        )
-      }
-
-      // Create Runar Contract instance from current UTXO
-      const contract = RunarContract.fromUtxo(artifact, {
-        txid: meter.token.txid,
-        outputIndex: meter.token.outputIndex,
-        satoshis: meter.token.satoshis,
-        script: meter.token.lockingScript
-      })
-
-      // Build next state
-      const nextContract = RunarContract.fromUtxo(artifact, {
-        txid: meter.token.txid,
-        outputIndex: meter.token.outputIndex,
-        satoshis: meter.token.satoshis,
-        script: meter.token.lockingScript
-      })
-      const nextState = { ...contract.state, count: (contract.state.count as bigint) - 1n }
-      nextContract.setState(nextState)
-      const nextScript = nextContract.getLockingScript()
-
-      const unlockingScript = contract.buildUnlockingScript('decrement', [])
-
-      // Convert from hex string
-      const atomicBeef = Utils.toArray(meter.token.atomicBeefTX, 'hex')
-
-      // Prepare broadcast parameters
-      const broadcastActionParams: CreateActionArgs = {
-        inputs: [
-          {
-            inputDescription: 'Decrement meter token',
-            outpoint: `${meter.token.txid}.${meter.token.outputIndex}`,
-            unlockingScript
-          }
-        ],
-        inputBEEF: atomicBeef,
-        outputs: [
-          {
-            basket: 'meter tokens',
-            lockingScript: nextScript,
-            satoshis: meter.token.satoshis,
-            outputDescription: 'Counter token'
-          }
-        ],
-        description: `Decrement a counter`,
-        options: { acceptDelayedBroadcast: false, randomizeOutputs: false }
-      }
-
-      // Create Action for Meter Decrement
-      const newMeterToken = await walletClient.createAction(
-        broadcastActionParams
-      )
-
-      if (!newMeterToken.tx) {
-        throw new Error(
-          'Transaction creation failed: newMeterToken.tx is undefined'
-        )
-      }
-
-      // Convert to Transaction format
-      const transaction = Transaction.fromAtomicBEEF(newMeterToken.tx)
-      const txid = transaction.id('hex')
-
-      const args: SHIPBroadcasterConfig = {
-        networkPreset: NETWORK_PRESET,
-        facilitator: httpFacilitator,
-        resolver: new LookupResolver({
-          hostOverrides: { 'tm_meter': [OVERLAY_URL] }
-        }),
-        requireAcknowledgmentFromSpecificHostsForTopics: {
-          'tm_meter': [OVERLAY_URL]
-        }
-      }
-      const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
-
-      // Broadcast the transaction
-      const broadcasterResult = await broadcaster.broadcast(transaction)
-
-      console.log('broadcasterResult.txid:', broadcasterResult.txid)
-      if (broadcasterResult.status === 'error') {
-        console.error(
-          'broadcasterResult.description:',
-          broadcasterResult.description
-        )
-      }
-
-      // Update state with new meter transaction details
-      setMeters(originalMeters => {
-        const copy = [...originalMeters]
-        copy[meterIndex] = {
-          ...copy[meterIndex],
-          value: copy[meterIndex].value - 1,
-          token: {
-            atomicBeefTX: Utils.toHex(newMeterToken.tx!),
-            txid,
-            outputIndex: 0,
-            lockingScript: nextScript,
-            satoshis: meter.token.satoshis
-          } as Token
-        }
-        return copy
-      })
-    } catch (error) {
-      console.error('Error in meter decrement:', (error as Error).message)
-      throw new Error(`Meter decrement failed: ${(error as Error).message}`)
+      toast.error((error as Error).message)
+      console.error('Error signing yearbook:', error)
+    } finally {
+      setSignLoading(false)
     }
   }
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      <ToastContainer position="top-right" autoClose={5000} />
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Meter — Counters, Up and Down.
+            Sign My Yearbook
           </Typography>
-          <GitHubIconStyle
-            onClick={() =>
-              window.open('https://github.com/p2ppsr/meter', '_blank')
-            }
+          <IconButton
+            sx={{ color: '#ffffff' }}
+            onClick={() => window.open('https://github.com/bsv-blockchain-demos/meter', '_blank')}
           >
             <GitHubIcon />
-          </GitHubIconStyle>
+          </IconButton>
         </Toolbar>
       </AppBar>
       <AppBarPlaceholder />
 
-      {meters.length >= 1 && (
-        <AddMoreFab
-          color="primary"
-          onClick={() => {
-            setCreateOpen(true)
-          }}
-        >
+      {yearBooks.length >= 1 && (
+        <AddMoreFab color="primary" onClick={() => setCreateOpen(true)}>
           <AddIcon />
         </AddMoreFab>
       )}
 
-      {metersLoading ? (
+      {yearBooksLoading ? (
         <LoadingBar />
       ) : (
         <List>
-          {meters.length === 0 && (
-            <NoItems
-              container
-              direction="column"
-              justifyContent="center"
-              alignItems="center"
-            >
-              <Grid item align="center">
-                <Typography variant="h4">No Meters</Typography>
+          {yearBooks.length === 0 && (
+            <NoItems container direction="column" justifyContent="center" alignItems="center">
+              <Grid item>
+                <Typography variant="h4">No Yearbooks Yet</Typography>
                 <Typography color="textSecondary">
-                  Use the button below to start a meter
+                  Create your yearbook and let others sign it
                 </Typography>
               </Grid>
-              <Grid
-                item
-                align="center"
-                sx={{ paddingTop: '2.5em', marginBottom: '1em' }}
-              >
-                <Fab
-                  color="primary"
-                  onClick={() => {
-                    setCreateOpen(true)
-                  }}
-                >
+              <Grid item sx={{ paddingTop: '2.5em', marginBottom: '1em' }}>
+                <Fab color="primary" onClick={() => setCreateOpen(true)}>
                   <AddIcon />
                 </Fab>
               </Grid>
             </NoItems>
           )}
-          <List>
-            {meters.map((meter, i) => (
-              <ListItem key={i}>
-                <Card sx={{ width: '100%', textAlign: 'center', padding: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6">
-                      Meter Value: {meter.value}
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleIncrement(i)}
-                    >
-                      +
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => handleDecrement(i)}
-                    >
-                      -
-                    </Button>
-                    <Typography variant="subtitle2" sx={{ marginTop: 1 }}>
-                      Identity Key:
-                    </Typography>
-                    <Typography variant="body2">
-                      {meter.creatorIdentityKey}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </ListItem>
-            ))}
-          </List>
+          {yearBooks.map((yb, i) => (
+            <ListItem key={i}>
+              <Card sx={{ width: '100%', padding: 2 }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Yearbook
+                  </Typography>
+                  <Chip
+                    label={`${yb.entryCount} signature${yb.entryCount !== 1 ? 's' : ''}`}
+                    color="primary"
+                    size="small"
+                    sx={{ mb: 1 }}
+                  />
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2, wordBreak: 'break-all' }}>
+                    Owner: {yb.creatorIdentityKey}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => setSignOpen(i)}
+                  >
+                    Sign This Yearbook
+                  </Button>
+                </CardContent>
+              </Card>
+            </ListItem>
+          ))}
         </List>
       )}
 
-      <Dialog
-        open={createOpen}
-        onClose={() => {
-          setCreateOpen(false)
-        }}
-      >
-        <form
-          onSubmit={e => {
-            e.preventDefault()
-            void (async () => {
-              try {
-                await handleCreateSubmit(e)
-              } catch (error) {
-                console.error('Error in form submission:', error)
-              }
-            })()
-          }}
-        >
-          <DialogTitle>Create a Meter</DialogTitle>
+      {/* Create Yearbook Dialog */}
+      <Dialog open={createOpen} onClose={() => setCreateOpen(false)}>
+        <form onSubmit={e => {
+          e.preventDefault()
+          void (async () => {
+            try { await handleCreateSubmit(e) } catch (err) { console.error(err) }
+          })()
+        }}>
+          <DialogTitle>Create a Yearbook</DialogTitle>
           <DialogContent>
-            <DialogContentText paragraph>
-              Meters can be incremented and decremented after creation.
+            <DialogContentText>
+              Start your on-chain yearbook. Others will be able to sign it with their messages.
             </DialogContentText>
           </DialogContent>
-          {createLoading ? (
-            <LoadingBar />
-          ) : (
+          {createLoading ? <LoadingBar /> : (
             <DialogActions>
-              <Button
-                onClick={() => {
-                  setCreateOpen(false)
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">OK</Button>
+              <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="contained">Create</Button>
             </DialogActions>
           )}
         </form>
+      </Dialog>
+
+      {/* Sign Yearbook Dialog */}
+      <Dialog open={signOpen !== null} onClose={() => { setSignOpen(null); setSignMessage('') }}>
+        <DialogTitle>Sign This Yearbook</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Leave your mark on this yearbook.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Your message"
+            placeholder="Have a great summer!"
+            value={signMessage}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSignMessage(e.target.value)}
+            multiline
+            rows={3}
+          />
+        </DialogContent>
+        {signLoading ? <LoadingBar /> : (
+          <DialogActions>
+            <Button onClick={() => { setSignOpen(null); setSignMessage('') }}>Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={!signMessage.trim()}
+              onClick={() => signOpen !== null && handleSign(signOpen)}
+            >
+              Sign
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
     </>
   )

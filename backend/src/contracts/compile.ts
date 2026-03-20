@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { compile } from 'runar-compiler'
 
-const source = readFileSync(new URL('./Counter.runar.ts', import.meta.url), 'utf-8')
-const result = compile(source, { fileName: 'Counter.runar.ts' })
+const source = readFileSync(new URL('./YearBook.runar.ts', import.meta.url), 'utf-8')
+const result = compile(source, { fileName: 'YearBook.runar.ts' })
 
 if (!result.success) {
   const errors = result.diagnostics
@@ -16,7 +16,7 @@ if (!result.success) {
 const artifact = result.artifact!
 mkdirSync(new URL('../../artifacts', import.meta.url), { recursive: true })
 writeFileSync(
-  new URL('../../artifacts/Counter.runar.json', import.meta.url),
+  new URL('../../artifacts/YearBook.runar.json', import.meta.url),
   JSON.stringify(artifact, (_, v) => typeof v === 'bigint' ? v.toString() : v, 2)
 )
 console.log(`Compiled: ${artifact.contractName}`)

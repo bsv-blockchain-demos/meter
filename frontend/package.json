@@ -20,7 +20,7 @@
     "use-async-effect": "^2.2.7"
   },
   "scripts": {
-    "prebuild": "mkdir -p src/artifacts && cp ../backend/artifacts/Counter.runar.json src/artifacts/",
+    "prebuild": "mkdir -p src/artifacts && cp ../backend/artifacts/YearBook.runar.json src/artifacts/",
     "start": "npm run prebuild && webpack serve --config webpack.dev.js",
     "build": "npm run prebuild && webpack --config webpack.prod.js"
   },
