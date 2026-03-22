@@ -27,11 +27,11 @@ async function main () {
 
   server.configureEngineParams({
     broadcaster: new ARC(ARC_URL),
-    syncConfiguration: ENABLE_GASP_SYNC ? undefined : {},
-    suppressDefaultSyncAdvertisements: !ENABLE_GASP_SYNC
+    syncConfiguration: {},
+    suppressDefaultSyncAdvertisements: true
   })
 
-  await server.configureEngine(!ENABLE_GASP_SYNC)
+  await server.configureEngine(false)
   await server.start()
   console.log(`YearBook overlay service listening on port ${PORT}`)
 }
