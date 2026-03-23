@@ -34,6 +34,7 @@ async function main () {
   await server.configureEngine(false)
   await server.start()
   console.log(`YearBook overlay service listening on port ${PORT}`)
+  console.log('[Server] config:', { MONGO_URL, HOSTING_DOMAIN, ARC_URL, CHAINTRACKS_URL, ENABLE_GASP_SYNC, network: process.env.BSV_NETWORK === 'test' ? 'test' : 'main' })
 }
 
 main().catch(err => {

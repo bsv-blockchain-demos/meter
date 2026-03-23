@@ -26,6 +26,7 @@ import GitHubIcon from '@mui/icons-material/GitHub'
 import CreateIcon from '@mui/icons-material/AutoStories'
 import DrawIcon from '@mui/icons-material/Draw'
 import ShareIcon from '@mui/icons-material/Share'
+import WhatshotIcon from '@mui/icons-material/Whatshot'
 import PersonIcon from '@mui/icons-material/Person'
 import useAsyncEffect from 'use-async-effect'
 import { YearBook, Token } from './types/types'
@@ -45,6 +46,12 @@ import {
 } from '@bsv/sdk'
 
 const MAX_SLOTS = 10
+
+// creatorIdentityKey is a readonly prop baked into the code script, not in stateFields.
+// Extract it from the known constructor slot offset (0x21 push + 33-byte PubKey).
+const CREATOR_KEY_HEX_OFFSET = (artifact as any).constructorSlots[0].byteOffset * 2
+const extractCreatorKey = (scriptHex: string): string =>
+  scriptHex.slice(CREATOR_KEY_HEX_OFFSET + 2, CREATOR_KEY_HEX_OFFSET + 2 + 66)
 
 const walletClient = new WalletClient()
 const NETWORK_PRESET = 'local'
@@ -69,9 +76,7 @@ const broadcasterConfig = (): SHIPBroadcasterConfig => ({
       [SERVICE]: [OVERLAY_URL]
     }
   }),
-  requireAcknowledgmentFromSpecificHostsForTopics: {
-    [TOPIC]: [OVERLAY_URL]
-  }
+  requireAcknowledgmentFromAnyHostForTopics: 'any'
 })
 
 const truncateKey = (key: string): string =>
@@ -169,7 +174,8 @@ const App: React.FC = () => {
 
       const broadcaster = new SHIPBroadcaster([TOPIC], broadcasterConfig())
       const broadcastResult = await broadcaster.broadcast(transaction)
-      if (broadcastResult.status === 'error') throw new Error('Transaction failed to broadcast')
+      console.log('[Create] broadcastResult:', JSON.stringify(broadcastResult))
+      if (broadcastResult.status === 'error') throw new Error(`Broadcast failed: ${(broadcastResult as any).code} — ${(broadcastResult as any).description}`)
 
       toast.dark('Yearbook created!')
       setYearBooks(prev => [{
@@ -217,7 +223,7 @@ const App: React.FC = () => {
             const friends = extractFriends(state as Record<string, unknown>)
 
             parsed.push({
-              creatorIdentityKey: String(state.creatorIdentityKey),
+              creatorIdentityKey: extractCreatorKey(script),
               friends,
               token: {
                 atomicBeefTX: Utils.toHex(tx.toAtomicBEEF()),
@@ -273,6 +279,19 @@ const App: React.FC = () => {
       const nextFriends = [...yb.friends]
       nextFriends[slotIndex] = messageHex
 
+      const { publicKey } = await walletClient.getPublicKey({
+        protocolID: [0, 'yearbook'],
+        keyID: '0',
+        counterparty: 'anyone'
+      })
+
+      const { signature } = await walletClient.createSignature({
+        data: Utils.toArray(signMessage, 'utf8'),
+        protocolID: [0, 'yearbook'],
+        keyID: '0',
+        counterparty: 'anyone'
+      })
+
       const nextState: Record<string, unknown> = { ...contract.state }
       FRIEND_FIELDS.forEach((f, i) => {
         nextState[f] = nextFriends[i]
@@ -280,7 +299,7 @@ const App: React.FC = () => {
       nextContract.setState(nextState)
 
       const nextScript = nextContract.getLockingScript()
-      const unlockingScript = contract.buildUnlockingScript('sign', [])
+      const unlockingScript = contract.buildUnlockingScript('sign', [messageHex, publicKey, Utils.toHex(signature)])
       const atomicBeef = Utils.toArray(yb.token.atomicBeefTX, 'hex')
 
       const actionParams: CreateActionArgs = {
@@ -308,8 +327,9 @@ const App: React.FC = () => {
 
       const broadcaster = new SHIPBroadcaster([TOPIC], broadcasterConfig())
       const broadcastResult = await broadcaster.broadcast(transaction)
+      console.log('[Sign] broadcastResult:', JSON.stringify(broadcastResult))
       if (broadcastResult.status === 'error') {
-        console.error('Broadcast error:', broadcastResult.description)
+        console.error('[Sign] Broadcast error:', (broadcastResult as any).code, (broadcastResult as any).description)
       }
 
       toast.dark('Yearbook signed!')
@@ -344,6 +364,51 @@ const App: React.FC = () => {
     url.searchParams.set('outputIndex', String(yb.token.outputIndex))
     navigator.clipboard.writeText(url.toString())
     toast.dark('Link copied to clipboard!')
+  }
+
+  const handleBurn = async (index: number): Promise<void> => {
+    try {
+      const yb = yearBooks[index]
+      if (!yb?.token?.atomicBeefTX || !yb.token.lockingScript || !yb.token.txid) {
+        throw new Error('Missing token data')
+      }
+
+      const contract = RunarContract.fromUtxo(artifact, {
+        txid: yb.token.txid,
+        outputIndex: yb.token.outputIndex,
+        satoshis: yb.token.satoshis,
+        script: yb.token.lockingScript
+      })
+
+      const unlockingScript = contract.buildUnlockingScript('burn', [])
+      const atomicBeef = Utils.toArray(yb.token.atomicBeefTX, 'hex')
+
+      const result = await walletClient.createAction({
+        inputs: [{
+          inputDescription: 'Burn yearbook',
+          outpoint: `${yb.token.txid}.${yb.token.outputIndex}`,
+          unlockingScript
+        }],
+        inputBEEF: atomicBeef,
+        outputs: [],
+        description: 'Burn a yearbook',
+        options: { randomizeOutputs: false }
+      })
+      if (!result.tx) throw new Error('Transaction creation failed')
+
+      const transaction = Transaction.fromAtomicBEEF(result.tx)
+      console.log('[Burn] txid:', transaction.id('hex'))
+
+      const broadcaster = new SHIPBroadcaster([TOPIC], broadcasterConfig())
+      const broadcastResult = await broadcaster.broadcast(transaction)
+      console.log('[Burn] broadcastResult:', JSON.stringify(broadcastResult))
+
+      toast.dark('Yearbook burned!')
+      setYearBooks(prev => prev.filter((_, i) => i !== index))
+    } catch (error) {
+      toast.error((error as Error).message)
+      console.error('Error burning yearbook:', error)
+    }
   }
 
   const decodeMessage = (hex: string): string => {
@@ -530,6 +595,15 @@ const App: React.FC = () => {
                             sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
                           >
                             <ShareIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Burn yearbook">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleBurn(i)}
+                            sx={{ color: 'text.secondary', '&:hover': { color: '#ff5722' } }}
+                          >
+                            <WhatshotIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       </Box>
