@@ -8,10 +8,6 @@
         {
           "name": "creatorIdentityKey",
           "type": "PubKey"
-        },
-        {
-          "name": "entryCount",
-          "type": "bigint"
         }
       ]
     },
@@ -19,6 +15,18 @@
       {
         "name": "sign",
         "params": [
+          {
+            "name": "message",
+            "type": "ByteString"
+          },
+          {
+            "name": "publicKey",
+            "type": "PubKey"
+          },
+          {
+            "name": "signature",
+            "type": "Sig"
+          },
           {
             "name": "_changePKH",
             "type": "Ripemd160"
@@ -37,38 +45,151 @@
           }
         ],
         "isPublic": true
+      },
+      {
+        "name": "burn",
+        "params": [
+          {
+            "name": "signature",
+            "type": "Sig"
+          },
+          {
+            "name": "txPreimage",
+            "type": "SigHashPreimage"
+          }
+        ],
+        "isPublic": true,
+        "isTerminal": true
       }
     ]
   },
-  "script": "76ab557a210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ad697601687f7782012c947f758258947f75820129947f7701217f81768b77557a557a041976a9147b7e0288ac7e7c58807c7e7b7b58807e5279547a7c7558806b5379016a7e7c7e827602fd009f635280517f75675480527f7501fd7c7e687c7e6c7c7e7c7eaa7c820128947f7701207f758777",
-  "asm": "OP_DUP OP_CODESEPARATOR OP_5 OP_ROLL <0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798> OP_CHECKSIGVERIFY OP_VERIFY OP_DUP <68> OP_SPLIT OP_NIP OP_SIZE <2c> OP_SUB OP_SPLIT OP_DROP OP_SIZE OP_8 OP_SUB OP_SPLIT OP_DROP OP_SIZE <29> OP_SUB OP_SPLIT OP_NIP <21> OP_SPLIT OP_BIN2NUM OP_DUP OP_1ADD OP_NIP OP_5 OP_ROLL OP_5 OP_ROLL <1976a914> OP_ROT OP_CAT <88ac> OP_CAT OP_SWAP OP_8 OP_NUM2BIN OP_SWAP OP_CAT OP_ROT OP_ROT OP_8 OP_NUM2BIN OP_CAT OP_2 OP_PICK OP_4 OP_ROLL OP_SWAP OP_DROP OP_8 OP_NUM2BIN OP_TOALTSTACK OP_3 OP_PICK <6a> OP_CAT OP_SWAP OP_CAT OP_SIZE OP_DUP <fd00> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <fd> OP_SWAP OP_CAT OP_ENDIF OP_SWAP OP_CAT OP_FROMALTSTACK OP_SWAP OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_SWAP OP_SIZE <28> OP_SUB OP_SPLIT OP_NIP <20> OP_SPLIT OP_DROP OP_EQUAL OP_NIP",
-  "buildTimestamp": "2026-03-20T14:47:25.697Z",
+  "script": "76009c637576ab587a210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ad697601687f7782012c947f758258947f75517f7c7601007e8102fd009f63756775527f77685879827756947f77517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868517f7c8176014c9f637f6776014d9c6375527f7c817f6775517f7c817f6868755e7a5f7aad59790087597900875979008759790087597900875979008759790087597900875979008759790087597991765a799a5a7a915279789a5b799a5b7a91547953799a789a5c799a5c7a91567955799a53799a789a5d799a5d7a91587957799a55799a53799a789a5e799a5e7a915a7959799a57799a55799a53799a789a5f799a5f7a915c795b799a59799a57799a55799a53799a789a60799a607a915e795d799a5b799a59799a57799a55799a53799a789a0111799a01117a91607a5f7a9a5d7a9a5b7a9a597a9a577a9a557a9a537a9a7c9a597a9a0113795a7a6301187967766801147a750113795b7a6301187967766801147a750113795c7a6301187967766801147a750113795d7a6301187967766801147a750113795e7a6301187967766801147a750113795f7a6301187967766801147a75011379607a6301187967766801147a7501137901117a6301187967766801147a7501137901127a6301187967766801147a7501137901137a6301187a677601197a756801147a7501177a01177a041976a9147b7e0288ac7e7c58807c7e01137a8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e686801127a8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e68687e607a8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e68687e5e7a8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e68687e5c7a8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e68687e5a7a8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e68687e587a8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e68687e567a8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e68687e547a8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e68687e7b8276014c9f635280517f757c7e67760200019f635280517f75014c7c7e7c7e675480527f75014d7c7e7c7e68687e5c795e7a7c7558806b5d79016a7e7c7e827602fd009f635280517f75675480527f7501fd7c7e687c7e6c7c7e7c7eaa5b7a820128947f7701207f7587777777777777777777777767519d76ab537a210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ad6901687f7782012c947f758258947f6d00ac68",
+  "asm": "OP_DUP OP_0 OP_NUMEQUAL OP_IF OP_DROP OP_DUP OP_CODESEPARATOR OP_8 OP_ROLL <0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798> OP_CHECKSIGVERIFY OP_VERIFY OP_DUP <68> OP_SPLIT OP_NIP OP_SIZE <2c> OP_SUB OP_SPLIT OP_DROP OP_SIZE OP_8 OP_SUB OP_SPLIT OP_DROP OP_1 OP_SPLIT OP_SWAP OP_DUP <00> OP_CAT OP_BIN2NUM <fd00> OP_LESSTHAN OP_IF OP_DROP OP_ELSE OP_DROP OP_2 OP_SPLIT OP_NIP OP_ENDIF OP_8 OP_PICK OP_SIZE OP_NIP OP_6 OP_SUB OP_SPLIT OP_NIP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_DUP <4c> OP_LESSTHAN OP_IF OP_SPLIT OP_ELSE OP_DUP <4d> OP_NUMEQUAL OP_IF OP_DROP OP_2 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ELSE OP_DROP OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_SPLIT OP_ENDIF OP_ENDIF OP_DROP OP_14 OP_ROLL OP_15 OP_ROLL OP_CHECKSIGVERIFY OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_0 OP_EQUAL OP_9 OP_PICK OP_NOT OP_DUP OP_10 OP_PICK OP_BOOLAND OP_10 OP_ROLL OP_NOT OP_2 OP_PICK OP_OVER OP_BOOLAND OP_11 OP_PICK OP_BOOLAND OP_11 OP_ROLL OP_NOT OP_4 OP_PICK OP_3 OP_PICK OP_BOOLAND OP_OVER OP_BOOLAND OP_12 OP_PICK OP_BOOLAND OP_12 OP_ROLL OP_NOT OP_6 OP_PICK OP_5 OP_PICK OP_BOOLAND OP_3 OP_PICK OP_BOOLAND OP_OVER OP_BOOLAND OP_13 OP_PICK OP_BOOLAND OP_13 OP_ROLL OP_NOT OP_8 OP_PICK OP_7 OP_PICK OP_BOOLAND OP_5 OP_PICK OP_BOOLAND OP_3 OP_PICK OP_BOOLAND OP_OVER OP_BOOLAND OP_14 OP_PICK OP_BOOLAND OP_14 OP_ROLL OP_NOT OP_10 OP_PICK OP_9 OP_PICK OP_BOOLAND OP_7 OP_PICK OP_BOOLAND OP_5 OP_PICK OP_BOOLAND OP_3 OP_PICK OP_BOOLAND OP_OVER OP_BOOLAND OP_15 OP_PICK OP_BOOLAND OP_15 OP_ROLL OP_NOT OP_12 OP_PICK OP_11 OP_PICK OP_BOOLAND OP_9 OP_PICK OP_BOOLAND OP_7 OP_PICK OP_BOOLAND OP_5 OP_PICK OP_BOOLAND OP_3 OP_PICK OP_BOOLAND OP_OVER OP_BOOLAND OP_16 OP_PICK OP_BOOLAND OP_16 OP_ROLL OP_NOT OP_14 OP_PICK OP_13 OP_PICK OP_BOOLAND OP_11 OP_PICK OP_BOOLAND OP_9 OP_PICK OP_BOOLAND OP_7 OP_PICK OP_BOOLAND OP_5 OP_PICK OP_BOOLAND OP_3 OP_PICK OP_BOOLAND OP_OVER OP_BOOLAND <11> OP_PICK OP_BOOLAND <11> OP_ROLL OP_NOT OP_16 OP_ROLL OP_15 OP_ROLL OP_BOOLAND OP_13 OP_ROLL OP_BOOLAND OP_11 OP_ROLL OP_BOOLAND OP_9 OP_ROLL OP_BOOLAND OP_7 OP_ROLL OP_BOOLAND OP_5 OP_ROLL OP_BOOLAND OP_3 OP_ROLL OP_BOOLAND OP_SWAP OP_BOOLAND OP_9 OP_ROLL OP_BOOLAND <13> OP_PICK OP_10 OP_ROLL OP_IF <18> OP_PICK OP_ELSE OP_DUP OP_ENDIF <14> OP_ROLL OP_DROP <13> OP_PICK OP_11 OP_ROLL OP_IF <18> OP_PICK OP_ELSE OP_DUP OP_ENDIF <14> OP_ROLL OP_DROP <13> OP_PICK OP_12 OP_ROLL OP_IF <18> OP_PICK OP_ELSE OP_DUP OP_ENDIF <14> OP_ROLL OP_DROP <13> OP_PICK OP_13 OP_ROLL OP_IF <18> OP_PICK OP_ELSE OP_DUP OP_ENDIF <14> OP_ROLL OP_DROP <13> OP_PICK OP_14 OP_ROLL OP_IF <18> OP_PICK OP_ELSE OP_DUP OP_ENDIF <14> OP_ROLL OP_DROP <13> OP_PICK OP_15 OP_ROLL OP_IF <18> OP_PICK OP_ELSE OP_DUP OP_ENDIF <14> OP_ROLL OP_DROP <13> OP_PICK OP_16 OP_ROLL OP_IF <18> OP_PICK OP_ELSE OP_DUP OP_ENDIF <14> OP_ROLL OP_DROP <13> OP_PICK <11> OP_ROLL OP_IF <18> OP_PICK OP_ELSE OP_DUP OP_ENDIF <14> OP_ROLL OP_DROP <13> OP_PICK <12> OP_ROLL OP_IF <18> OP_PICK OP_ELSE OP_DUP OP_ENDIF <14> OP_ROLL OP_DROP <13> OP_PICK <13> OP_ROLL OP_IF <18> OP_ROLL OP_ELSE OP_DUP <19> OP_ROLL OP_DROP OP_ENDIF <14> OP_ROLL OP_DROP <17> OP_ROLL <17> OP_ROLL <1976a914> OP_ROT OP_CAT <88ac> OP_CAT OP_SWAP OP_8 OP_NUM2BIN OP_SWAP OP_CAT <13> OP_ROLL OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF <12> OP_ROLL OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF OP_CAT OP_16 OP_ROLL OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF OP_CAT OP_14 OP_ROLL OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF OP_CAT OP_12 OP_ROLL OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF OP_CAT OP_10 OP_ROLL OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF OP_CAT OP_8 OP_ROLL OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF OP_CAT OP_6 OP_ROLL OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF OP_CAT OP_4 OP_ROLL OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF OP_CAT OP_ROT OP_SIZE OP_DUP <4c> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_SWAP OP_CAT OP_ELSE OP_DUP <0001> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP <4c> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <4d> OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ENDIF OP_ENDIF OP_CAT OP_12 OP_PICK OP_14 OP_ROLL OP_SWAP OP_DROP OP_8 OP_NUM2BIN OP_TOALTSTACK OP_13 OP_PICK <6a> OP_CAT OP_SWAP OP_CAT OP_SIZE OP_DUP <fd00> OP_LESSTHAN OP_IF OP_2 OP_NUM2BIN OP_1 OP_SPLIT OP_DROP OP_ELSE OP_4 OP_NUM2BIN OP_2 OP_SPLIT OP_DROP <fd> OP_SWAP OP_CAT OP_ENDIF OP_SWAP OP_CAT OP_FROMALTSTACK OP_SWAP OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_11 OP_ROLL OP_SIZE <28> OP_SUB OP_SPLIT OP_NIP <20> OP_SPLIT OP_DROP OP_EQUAL OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_ELSE OP_1 OP_NUMEQUALVERIFY OP_DUP OP_CODESEPARATOR OP_3 OP_ROLL <0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798> OP_CHECKSIGVERIFY OP_VERIFY <68> OP_SPLIT OP_NIP OP_SIZE <2c> OP_SUB OP_SPLIT OP_DROP OP_SIZE OP_8 OP_SUB OP_SPLIT OP_2DROP OP_0 OP_CHECKSIG OP_ENDIF",
+  "buildTimestamp": "2026-03-23T14:15:43.743Z",
   "sourceMap": {
     "mappings": [
       {
-        "opcodeIndex": 29,
+        "opcodeIndex": 342,
         "sourceFile": "YearBook.runar.ts",
-        "line": 14,
+        "line": 23,
         "column": 4
       },
       {
-        "opcodeIndex": 31,
+        "opcodeIndex": 343,
         "sourceFile": "YearBook.runar.ts",
-        "line": 14,
+        "line": 23,
+        "column": 4
+      },
+      {
+        "opcodeIndex": 344,
+        "sourceFile": "YearBook.runar.ts",
+        "line": 23,
+        "column": 4
+      },
+      {
+        "opcodeIndex": 345,
+        "sourceFile": "YearBook.runar.ts",
+        "line": 23,
+        "column": 4
+      },
+      {
+        "opcodeIndex": 347,
+        "sourceFile": "YearBook.runar.ts",
+        "line": 24,
+        "column": 4
+      },
+      {
+        "opcodeIndex": 348,
+        "sourceFile": "YearBook.runar.ts",
+        "line": 24,
+        "column": 4
+      },
+      {
+        "opcodeIndex": 349,
+        "sourceFile": "YearBook.runar.ts",
+        "line": 24,
+        "column": 4
+      },
+      {
+        "opcodeIndex": 350,
+        "sourceFile": "YearBook.runar.ts",
+        "line": 24,
+        "column": 4
+      },
+      {
+        "opcodeIndex": 1221,
+        "sourceFile": "YearBook.runar.ts",
+        "line": 50,
+        "column": 4
+      },
+      {
+        "opcodeIndex": 1222,
+        "sourceFile": "YearBook.runar.ts",
+        "line": 50,
         "column": 4
       }
     ]
   },
   "stateFields": [
     {
-      "name": "creatorIdentityKey",
-      "type": "PubKey",
-      "index": 0
+      "name": "friend1",
+      "type": "ByteString",
+      "index": 1,
+      "initialValue": ""
     },
     {
-      "name": "entryCount",
-      "type": "bigint",
-      "index": 1
+      "name": "friend2",
+      "type": "ByteString",
+      "index": 2,
+      "initialValue": ""
+    },
+    {
+      "name": "friend3",
+      "type": "ByteString",
+      "index": 3,
+      "initialValue": ""
+    },
+    {
+      "name": "friend4",
+      "type": "ByteString",
+      "index": 4,
+      "initialValue": ""
+    },
+    {
+      "name": "friend5",
+      "type": "ByteString",
+      "index": 5,
+      "initialValue": ""
+    },
+    {
+      "name": "friend6",
+      "type": "ByteString",
+      "index": 6,
+      "initialValue": ""
+    },
+    {
+      "name": "friend7",
+      "type": "ByteString",
+      "index": 7,
+      "initialValue": ""
+    },
+    {
+      "name": "friend8",
+      "type": "ByteString",
+      "index": 8,
+      "initialValue": ""
+    },
+    {
+      "name": "friend9",
+      "type": "ByteString",
+      "index": 9,
+      "initialValue": ""
+    },
+    {
+      "name": "friend10",
+      "type": "ByteString",
+      "index": 10,
+      "initialValue": ""
     }
   ],
   "anf": {
@@ -77,12 +198,67 @@
       {
         "name": "creatorIdentityKey",
         "type": "PubKey",
-        "readonly": false
+        "readonly": true
       },
       {
-        "name": "entryCount",
-        "type": "bigint",
-        "readonly": false
+        "name": "friend1",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
+      },
+      {
+        "name": "friend2",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
+      },
+      {
+        "name": "friend3",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
+      },
+      {
+        "name": "friend4",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
+      },
+      {
+        "name": "friend5",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
+      },
+      {
+        "name": "friend6",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
+      },
+      {
+        "name": "friend7",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
+      },
+      {
+        "name": "friend8",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
+      },
+      {
+        "name": "friend9",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
+      },
+      {
+        "name": "friend10",
+        "type": "ByteString",
+        "readonly": false,
+        "initialValue": ""
       }
     ],
     "methods": [
@@ -92,10 +268,6 @@
           {
             "name": "creatorIdentityKey",
             "type": "PubKey"
-          },
-          {
-            "name": "entryCount",
-            "type": "bigint"
           }
         ],
         "body": [
@@ -107,85 +279,47 @@
             },
             "sourceLoc": {
               "file": "YearBook.runar.ts",
-              "line": 8,
+              "line": 18,
               "column": 4
             }
           },
           {
             "name": "t1",
             "value": {
-              "kind": "load_prop",
-              "name": "entryCount"
+              "kind": "call",
+              "func": "super",
+              "args": [
+                "t0"
+              ]
             },
             "sourceLoc": {
               "file": "YearBook.runar.ts",
-              "line": 8,
+              "line": 18,
               "column": 4
             }
           },
           {
             "name": "t2",
             "value": {
-              "kind": "call",
-              "func": "super",
-              "args": [
-                "t0",
-                "t1"
-              ]
+              "kind": "load_prop",
+              "name": "creatorIdentityKey"
             },
             "sourceLoc": {
               "file": "YearBook.runar.ts",
-              "line": 8,
+              "line": 19,
               "column": 4
             }
           },
           {
             "name": "t3",
             "value": {
-              "kind": "load_prop",
-              "name": "creatorIdentityKey"
-            },
-            "sourceLoc": {
-              "file": "YearBook.runar.ts",
-              "line": 9,
-              "column": 4
-            }
-          },
-          {
-            "name": "t4",
-            "value": {
               "kind": "update_prop",
               "name": "creatorIdentityKey",
-              "value": "t3"
+              "value": "t2"
             },
             "sourceLoc": {
               "file": "YearBook.runar.ts",
-              "line": 9,
-              "column": 4
-            }
-          },
-          {
-            "name": "t5",
-            "value": {
-              "kind": "load_prop",
-              "name": "entryCount"
-            },
-            "sourceLoc": {
-              "file": "YearBook.runar.ts",
-              "line": 10,
-              "column": 4
-            }
-          },
-          {
-            "name": "t6",
-            "value": {
-              "kind": "update_prop",
-              "name": "entryCount",
-              "value": "t5"
-            },
-            "sourceLoc": {
-              "file": "YearBook.runar.ts",
-              "line": 10,
+              "line": 19,
               "column": 4
             }
           }
@@ -195,6 +329,18 @@
       {
         "name": "sign",
         "params": [
+          {
+            "name": "message",
+            "type": "ByteString"
+          },
+          {
+            "name": "publicKey",
+            "type": "PubKey"
+          },
+          {
+            "name": "signature",
+            "type": "Sig"
+          },
           {
             "name": "_changePKH",
             "type": "Ripemd160"
@@ -251,164 +397,1400 @@
           {
             "name": "t5",
             "value": {
-              "kind": "load_prop",
-              "name": "entryCount"
+              "kind": "load_param",
+              "name": "signature"
             },
             "sourceLoc": {
               "file": "YearBook.runar.ts",
-              "line": 14,
+              "line": 23,
               "column": 4
             }
           },
           {
             "name": "t6",
             "value": {
-              "kind": "load_const",
-              "value": "1"
+              "kind": "load_param",
+              "name": "publicKey"
             },
             "sourceLoc": {
               "file": "YearBook.runar.ts",
-              "line": 14,
+              "line": 23,
               "column": 4
             }
           },
           {
             "name": "t7",
             "value": {
-              "kind": "bin_op",
-              "op": "+",
-              "left": "t5",
-              "right": "t6"
+              "kind": "call",
+              "func": "checkSig",
+              "args": [
+                "t5",
+                "t6"
+              ]
             },
             "sourceLoc": {
               "file": "YearBook.runar.ts",
-              "line": 14,
+              "line": 23,
               "column": 4
             }
           },
           {
             "name": "t8",
             "value": {
-              "kind": "update_prop",
-              "name": "entryCount",
+              "kind": "assert",
               "value": "t7"
             },
             "sourceLoc": {
               "file": "YearBook.runar.ts",
-              "line": 14,
+              "line": 23,
               "column": 4
             }
           },
           {
             "name": "t9",
             "value": {
+              "kind": "load_prop",
+              "name": "friend1"
+            },
+            "sourceLoc": {
+              "file": "YearBook.runar.ts",
+              "line": 24,
+              "column": 4
+            }
+          },
+          {
+            "name": "t10",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            },
+            "sourceLoc": {
+              "file": "YearBook.runar.ts",
+              "line": 24,
+              "column": 4
+            }
+          },
+          {
+            "name": "t11",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t9",
+              "right": "t10",
+              "result_type": "bytes"
+            },
+            "sourceLoc": {
+              "file": "YearBook.runar.ts",
+              "line": 24,
+              "column": 4
+            }
+          },
+          {
+            "name": "t84",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend2"
+            }
+          },
+          {
+            "name": "t85",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            }
+          },
+          {
+            "name": "t86",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t84",
+              "right": "t85",
+              "result_type": "bytes"
+            }
+          },
+          {
+            "name": "t87",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend3"
+            }
+          },
+          {
+            "name": "t88",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            }
+          },
+          {
+            "name": "t89",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t87",
+              "right": "t88",
+              "result_type": "bytes"
+            }
+          },
+          {
+            "name": "t90",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend4"
+            }
+          },
+          {
+            "name": "t91",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            }
+          },
+          {
+            "name": "t92",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t90",
+              "right": "t91",
+              "result_type": "bytes"
+            }
+          },
+          {
+            "name": "t93",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend5"
+            }
+          },
+          {
+            "name": "t94",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            }
+          },
+          {
+            "name": "t95",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t93",
+              "right": "t94",
+              "result_type": "bytes"
+            }
+          },
+          {
+            "name": "t96",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend6"
+            }
+          },
+          {
+            "name": "t97",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            }
+          },
+          {
+            "name": "t98",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t96",
+              "right": "t97",
+              "result_type": "bytes"
+            }
+          },
+          {
+            "name": "t99",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend7"
+            }
+          },
+          {
+            "name": "t100",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            }
+          },
+          {
+            "name": "t101",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t99",
+              "right": "t100",
+              "result_type": "bytes"
+            }
+          },
+          {
+            "name": "t102",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend8"
+            }
+          },
+          {
+            "name": "t103",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            }
+          },
+          {
+            "name": "t104",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t102",
+              "right": "t103",
+              "result_type": "bytes"
+            }
+          },
+          {
+            "name": "t105",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend9"
+            }
+          },
+          {
+            "name": "t106",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            }
+          },
+          {
+            "name": "t107",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t105",
+              "right": "t106",
+              "result_type": "bytes"
+            }
+          },
+          {
+            "name": "t108",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend10"
+            }
+          },
+          {
+            "name": "t109",
+            "value": {
+              "kind": "load_const",
+              "value": ""
+            }
+          },
+          {
+            "name": "t110",
+            "value": {
+              "kind": "bin_op",
+              "op": "===",
+              "left": "t108",
+              "right": "t109",
+              "result_type": "bytes"
+            }
+          },
+          {
+            "name": "t111",
+            "value": {
+              "kind": "unary_op",
+              "op": "!",
+              "operand": "t11"
+            }
+          },
+          {
+            "name": "t112",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t111",
+              "right": "t86"
+            }
+          },
+          {
+            "name": "t113",
+            "value": {
+              "kind": "unary_op",
+              "op": "!",
+              "operand": "t86"
+            }
+          },
+          {
+            "name": "t114",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t111",
+              "right": "t113"
+            }
+          },
+          {
+            "name": "t115",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t114",
+              "right": "t89"
+            }
+          },
+          {
+            "name": "t116",
+            "value": {
+              "kind": "unary_op",
+              "op": "!",
+              "operand": "t89"
+            }
+          },
+          {
+            "name": "t117",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t111",
+              "right": "t113"
+            }
+          },
+          {
+            "name": "t118",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t117",
+              "right": "t116"
+            }
+          },
+          {
+            "name": "t119",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t118",
+              "right": "t92"
+            }
+          },
+          {
+            "name": "t120",
+            "value": {
+              "kind": "unary_op",
+              "op": "!",
+              "operand": "t92"
+            }
+          },
+          {
+            "name": "t121",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t111",
+              "right": "t113"
+            }
+          },
+          {
+            "name": "t122",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t121",
+              "right": "t116"
+            }
+          },
+          {
+            "name": "t123",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t122",
+              "right": "t120"
+            }
+          },
+          {
+            "name": "t124",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t123",
+              "right": "t95"
+            }
+          },
+          {
+            "name": "t125",
+            "value": {
+              "kind": "unary_op",
+              "op": "!",
+              "operand": "t95"
+            }
+          },
+          {
+            "name": "t126",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t111",
+              "right": "t113"
+            }
+          },
+          {
+            "name": "t127",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t126",
+              "right": "t116"
+            }
+          },
+          {
+            "name": "t128",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t127",
+              "right": "t120"
+            }
+          },
+          {
+            "name": "t129",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t128",
+              "right": "t125"
+            }
+          },
+          {
+            "name": "t130",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t129",
+              "right": "t98"
+            }
+          },
+          {
+            "name": "t131",
+            "value": {
+              "kind": "unary_op",
+              "op": "!",
+              "operand": "t98"
+            }
+          },
+          {
+            "name": "t132",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t111",
+              "right": "t113"
+            }
+          },
+          {
+            "name": "t133",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t132",
+              "right": "t116"
+            }
+          },
+          {
+            "name": "t134",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t133",
+              "right": "t120"
+            }
+          },
+          {
+            "name": "t135",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t134",
+              "right": "t125"
+            }
+          },
+          {
+            "name": "t136",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t135",
+              "right": "t131"
+            }
+          },
+          {
+            "name": "t137",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t136",
+              "right": "t101"
+            }
+          },
+          {
+            "name": "t138",
+            "value": {
+              "kind": "unary_op",
+              "op": "!",
+              "operand": "t101"
+            }
+          },
+          {
+            "name": "t139",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t111",
+              "right": "t113"
+            }
+          },
+          {
+            "name": "t140",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t139",
+              "right": "t116"
+            }
+          },
+          {
+            "name": "t141",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t140",
+              "right": "t120"
+            }
+          },
+          {
+            "name": "t142",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t141",
+              "right": "t125"
+            }
+          },
+          {
+            "name": "t143",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t142",
+              "right": "t131"
+            }
+          },
+          {
+            "name": "t144",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t143",
+              "right": "t138"
+            }
+          },
+          {
+            "name": "t145",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t144",
+              "right": "t104"
+            }
+          },
+          {
+            "name": "t146",
+            "value": {
+              "kind": "unary_op",
+              "op": "!",
+              "operand": "t104"
+            }
+          },
+          {
+            "name": "t147",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t111",
+              "right": "t113"
+            }
+          },
+          {
+            "name": "t148",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t147",
+              "right": "t116"
+            }
+          },
+          {
+            "name": "t149",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t148",
+              "right": "t120"
+            }
+          },
+          {
+            "name": "t150",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t149",
+              "right": "t125"
+            }
+          },
+          {
+            "name": "t151",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t150",
+              "right": "t131"
+            }
+          },
+          {
+            "name": "t152",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t151",
+              "right": "t138"
+            }
+          },
+          {
+            "name": "t153",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t152",
+              "right": "t146"
+            }
+          },
+          {
+            "name": "t154",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t153",
+              "right": "t107"
+            }
+          },
+          {
+            "name": "t155",
+            "value": {
+              "kind": "unary_op",
+              "op": "!",
+              "operand": "t107"
+            }
+          },
+          {
+            "name": "t156",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t111",
+              "right": "t113"
+            }
+          },
+          {
+            "name": "t157",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t156",
+              "right": "t116"
+            }
+          },
+          {
+            "name": "t158",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t157",
+              "right": "t120"
+            }
+          },
+          {
+            "name": "t159",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t158",
+              "right": "t125"
+            }
+          },
+          {
+            "name": "t160",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t159",
+              "right": "t131"
+            }
+          },
+          {
+            "name": "t161",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t160",
+              "right": "t138"
+            }
+          },
+          {
+            "name": "t162",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t161",
+              "right": "t146"
+            }
+          },
+          {
+            "name": "t163",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t162",
+              "right": "t155"
+            }
+          },
+          {
+            "name": "t164",
+            "value": {
+              "kind": "bin_op",
+              "op": "&&",
+              "left": "t163",
+              "right": "t110"
+            }
+          },
+          {
+            "name": "t165",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend1"
+            }
+          },
+          {
+            "name": "t168",
+            "value": {
+              "kind": "if",
+              "cond": "t11",
+              "then": [
+                {
+                  "name": "t166",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t167",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t165"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t169",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend1",
+              "value": "t168"
+            }
+          },
+          {
+            "name": "t170",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend2"
+            }
+          },
+          {
+            "name": "t173",
+            "value": {
+              "kind": "if",
+              "cond": "t112",
+              "then": [
+                {
+                  "name": "t171",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t172",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t170"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t174",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend2",
+              "value": "t173"
+            }
+          },
+          {
+            "name": "t175",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend3"
+            }
+          },
+          {
+            "name": "t178",
+            "value": {
+              "kind": "if",
+              "cond": "t115",
+              "then": [
+                {
+                  "name": "t176",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t177",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t175"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t179",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend3",
+              "value": "t178"
+            }
+          },
+          {
+            "name": "t180",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend4"
+            }
+          },
+          {
+            "name": "t183",
+            "value": {
+              "kind": "if",
+              "cond": "t119",
+              "then": [
+                {
+                  "name": "t181",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t182",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t180"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t184",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend4",
+              "value": "t183"
+            }
+          },
+          {
+            "name": "t185",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend5"
+            }
+          },
+          {
+            "name": "t188",
+            "value": {
+              "kind": "if",
+              "cond": "t124",
+              "then": [
+                {
+                  "name": "t186",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t187",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t185"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t189",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend5",
+              "value": "t188"
+            }
+          },
+          {
+            "name": "t190",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend6"
+            }
+          },
+          {
+            "name": "t193",
+            "value": {
+              "kind": "if",
+              "cond": "t130",
+              "then": [
+                {
+                  "name": "t191",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t192",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t190"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t194",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend6",
+              "value": "t193"
+            }
+          },
+          {
+            "name": "t195",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend7"
+            }
+          },
+          {
+            "name": "t198",
+            "value": {
+              "kind": "if",
+              "cond": "t137",
+              "then": [
+                {
+                  "name": "t196",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t197",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t195"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t199",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend7",
+              "value": "t198"
+            }
+          },
+          {
+            "name": "t200",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend8"
+            }
+          },
+          {
+            "name": "t203",
+            "value": {
+              "kind": "if",
+              "cond": "t145",
+              "then": [
+                {
+                  "name": "t201",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t202",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t200"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t204",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend8",
+              "value": "t203"
+            }
+          },
+          {
+            "name": "t205",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend9"
+            }
+          },
+          {
+            "name": "t208",
+            "value": {
+              "kind": "if",
+              "cond": "t154",
+              "then": [
+                {
+                  "name": "t206",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t207",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t205"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t209",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend9",
+              "value": "t208"
+            }
+          },
+          {
+            "name": "t210",
+            "value": {
+              "kind": "load_prop",
+              "name": "friend10"
+            }
+          },
+          {
+            "name": "t213",
+            "value": {
+              "kind": "if",
+              "cond": "t164",
+              "then": [
+                {
+                  "name": "t211",
+                  "value": {
+                    "kind": "load_param",
+                    "name": "message"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "name": "t212",
+                  "value": {
+                    "kind": "load_const",
+                    "value": "@ref:t210"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "t214",
+            "value": {
+              "kind": "update_prop",
+              "name": "friend10",
+              "value": "t213"
+            }
+          },
+          {
+            "name": "t71",
+            "value": {
               "kind": "load_param",
               "name": "_changePKH"
             }
           },
           {
-            "name": "t10",
+            "name": "t72",
             "value": {
               "kind": "load_param",
               "name": "_changeAmount"
             }
           },
           {
-            "name": "t11",
+            "name": "t73",
             "value": {
               "kind": "call",
               "func": "buildChangeOutput",
               "args": [
-                "t9",
-                "t10"
+                "t71",
+                "t72"
               ]
             }
           },
           {
-            "name": "t12",
+            "name": "t74",
             "value": {
               "kind": "get_state_script"
             }
           },
           {
-            "name": "t13",
+            "name": "t75",
             "value": {
               "kind": "load_param",
               "name": "txPreimage"
             }
           },
           {
-            "name": "t14",
+            "name": "t76",
             "value": {
               "kind": "load_param",
               "name": "_newAmount"
             }
           },
           {
-            "name": "t15",
+            "name": "t77",
             "value": {
               "kind": "call",
               "func": "computeStateOutput",
               "args": [
-                "t13",
-                "t12",
-                "t14"
+                "t75",
+                "t74",
+                "t76"
               ]
             }
           },
           {
-            "name": "t16",
+            "name": "t78",
             "value": {
               "kind": "call",
               "func": "cat",
               "args": [
-                "t15",
-                "t11"
+                "t77",
+                "t73"
               ]
             }
           },
           {
-            "name": "t17",
+            "name": "t79",
             "value": {
               "kind": "call",
               "func": "hash256",
               "args": [
-                "t16"
+                "t78"
               ]
             }
           },
           {
-            "name": "t18",
+            "name": "t80",
             "value": {
               "kind": "load_param",
               "name": "txPreimage"
             }
           },
           {
-            "name": "t19",
+            "name": "t81",
             "value": {
               "kind": "call",
               "func": "extractOutputHash",
               "args": [
-                "t18"
+                "t80"
               ]
             }
           },
           {
-            "name": "t20",
+            "name": "t82",
             "value": {
               "kind": "bin_op",
               "op": "===",
-              "left": "t17",
-              "right": "t19",
+              "left": "t79",
+              "right": "t81",
               "result_type": "bytes"
             }
           },
           {
-            "name": "t21",
+            "name": "t83",
             "value": {
               "kind": "assert",
-              "value": "t20"
+              "value": "t82"
+            }
+          }
+        ],
+        "isPublic": true
+      },
+      {
+        "name": "burn",
+        "params": [
+          {
+            "name": "signature",
+            "type": "Sig"
+          },
+          {
+            "name": "txPreimage",
+            "type": "SigHashPreimage"
+          }
+        ],
+        "body": [
+          {
+            "name": "t0",
+            "value": {
+              "kind": "load_param",
+              "name": "txPreimage"
+            }
+          },
+          {
+            "name": "t1",
+            "value": {
+              "kind": "check_preimage",
+              "preimage": "t0"
+            }
+          },
+          {
+            "name": "t2",
+            "value": {
+              "kind": "assert",
+              "value": "t1"
+            }
+          },
+          {
+            "name": "t3",
+            "value": {
+              "kind": "load_param",
+              "name": "txPreimage"
+            }
+          },
+          {
+            "name": "t4",
+            "value": {
+              "kind": "deserialize_state",
+              "preimage": "t3"
+            }
+          },
+          {
+            "name": "t5",
+            "value": {
+              "kind": "load_param",
+              "name": "signature"
+            },
+            "sourceLoc": {
+              "file": "YearBook.runar.ts",
+              "line": 50,
+              "column": 4
+            }
+          },
+          {
+            "name": "t6",
+            "value": {
+              "kind": "load_prop",
+              "name": "creatorIdentityKey"
+            },
+            "sourceLoc": {
+              "file": "YearBook.runar.ts",
+              "line": 50,
+              "column": 4
+            }
+          },
+          {
+            "name": "t7",
+            "value": {
+              "kind": "call",
+              "func": "checkSig",
+              "args": [
+                "t5",
+                "t6"
+              ]
+            },
+            "sourceLoc": {
+              "file": "YearBook.runar.ts",
+              "line": 50,
+              "column": 4
+            }
+          },
+          {
+            "name": "t8",
+            "value": {
+              "kind": "assert",
+              "value": "t7"
+            },
+            "sourceLoc": {
+              "file": "YearBook.runar.ts",
+              "line": 50,
+              "column": 4
             }
           }
         ],
@@ -416,8 +1798,15 @@
       }
     ]
   },
-  "codeSeparatorIndex": 1,
+  "constructorSlots": [
+    {
+      "paramIndex": 0,
+      "byteOffset": 1416
+    }
+  ],
+  "codeSeparatorIndex": 1362,
   "codeSeparatorIndices": [
-    1
+    6,
+    1362
   ]
 }

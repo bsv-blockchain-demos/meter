@@ -30,9 +30,9 @@ services:
       retries: 10
 
   yearbook-back:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run compile && npx tsx watch src/server.ts"
     ports:
       - "8080:8080"
     environment:
@@ -40,6 +40,9 @@ services:
       KNEX_URL: mysql://root:example@mysql:3306/yearbook
       MONGO_URL: mongodb://root:example@mongodb:27017
       BSV_NETWORK: main
+    volumes:
+      - ./backend:/app
+      - backend-node-modules:/app/node_modules
     depends_on:
       mongodb:
         condition: service_healthy
@@ -47,14 +50,24 @@ services:
         condition: service_healthy
 
   yearbook-front:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm ci && mkdir -p src/artifacts && npx webpack serve --config webpack.dev.js --host 0.0.0.0 --no-open"
     ports:
-      - "5173:8080"
+      - "5173:5173"
+    environment:
+      # Point API calls at the backend container
+      REACT_APP_BACKEND_URL: http://localhost:8080
+    volumes:
+      - ./frontend:/app
+      # Share compiled artifact from backend into frontend src
+      - ./backend/artifacts:/app/src/artifacts:ro
+      - frontend-node-modules:/app/node_modules
     depends_on:
       - yearbook-back
 
 volumes:
   mongo-data:
   mysql-data:
+  backend-node-modules:
+  frontend-node-modules:

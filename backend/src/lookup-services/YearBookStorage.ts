@@ -8,12 +8,12 @@ export class YearBookStorage {
     this.records = db.collection<YearBookRecord>('YearBookRecords')
   }
 
-  async storeRecord (txid: string, outputIndex: number, creatorIdentityKey: string, entryCount: number): Promise<void> {
+  async storeRecord (txid: string, outputIndex: number, creatorIdentityKey: string, friends: string[]): Promise<void> {
     await this.records.insertOne({
       txid,
       outputIndex,
       creatorIdentityKey,
-      entryCount,
+      friends,
       createdAt: new Date()
     })
   }

@@ -2,7 +2,7 @@ export interface YearBookRecord {
   txid: string
   outputIndex: number
   creatorIdentityKey: string
-  entryCount: number
+  friends: string[]
   createdAt: Date
 }
 

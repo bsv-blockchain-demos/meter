@@ -16,6 +16,11 @@ import { Db } from 'mongodb'
 
 const artifact = yearBookArtifact as unknown as RunarArtifact
 
+const FRIEND_FIELDS = [
+  'friend1', 'friend2', 'friend3', 'friend4', 'friend5',
+  'friend6', 'friend7', 'friend8', 'friend9', 'friend10'
+] as const
+
 class YearBookLookupService implements LookupService {
   readonly admissionMode: AdmissionMode = 'locking-script'
   readonly spendNotificationMode: SpendNotificationMode = 'none'
@@ -32,10 +37,10 @@ class YearBookLookupService implements LookupService {
       const state = extractStateFromScript(artifact, lockingScript.toHex())
       if (!state) throw new Error('Failed to extract state from script')
 
-      const entryCount = Number(state.entryCount as bigint)
       const creatorIdentityKey = state.creatorIdentityKey as string
+      const friends: string[] = FRIEND_FIELDS.map(f => String(state[f] ?? ''))
 
-      await this.storage.storeRecord(txid, outputIndex, creatorIdentityKey, entryCount)
+      await this.storage.storeRecord(txid, outputIndex, creatorIdentityKey, friends)
     } catch (e) {
       console.error('Error indexing yearbook in lookup database', e)
       return

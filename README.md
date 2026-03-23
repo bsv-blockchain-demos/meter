@@ -1,63 +1,97 @@
-## Meter for the New World
-If you have problems accessing hosts:
-`broadcasterResult.description: All local topical hosts have rejected the transaction.`
+# Sign My YearBook
+
+An on-chain yearbook that anyone can sign. Built with Runar smart contracts on the BSV overlay network.
+
+Each yearbook lives as a UTXO on the BSV blockchain with 10 signature slots. Friends can sign it by leaving a message recorded as a Bitcoin transaction, forever on-chain.
+
+## Getting Started
+
+### With Docker (recommended)
+
+```bash
+npm run dev        # docker compose up --build
+```
+
+This starts 4 services:
+- **mongodb** (port 27017) — lookup service storage
+- **mysql** (port 3306) — overlay engine internal state
+- **yearbook-back** (port 8080) — BSV overlay service
+- **yearbook-front** (port 5173) — React SPA via nginx
+
+### Without Docker
+
+```bash
+# Backend
+cd backend
+npm install
+npm run compile    # Compile Runar contract
+npm run build      # TypeScript compile
+npm run start      # Starts overlay server on port 8080
+
+# Frontend (in a separate terminal)
+cd frontend
+npm install
+npm run start      # webpack-dev-server on port 5173
+```
+
+Requires MongoDB and MySQL running locally.
+
+## Troubleshooting
+
+If you see:
+```
+broadcasterResult.description: All local topical hosts have rejected the transaction.
+```
 
 Try using your browser with a command switch. Ensure you use a temporary profile if you do disable your security settings.
 
 For Linux:
-`brave-browser --disable-web-security --user-data-dir="/tmp/brave_dev"`
-
-# BSV Project
-
-Standard BSV project structure.
-
-Helpful Links:
-
-- [LARS (for local development)](https://github.com/bitcoin-sv/lars)
-- [CARS CLI (for cloud deployment)](https://github.com/bitcoin-sv/cars-cli)
-- [RUN YOUR OWN CARS NODE](https://github.com/bitcoin-sv/cars-node)
-- [Specification for deployment-info.json](https://github.com/bitcoin-sv/BRCs/blob/master/apps/0102.md)
-
-## Getting Started
-
-- Clone this repository
-- Run `npm i` to install dependencies
-- Run `npm run lars` to configure the local environment according to your needs
-- Use `npm run start` to spin up and start writing code
-- When you're ready to publish your project, start by running `npm run cars` and configuring one (or, especially for overlays, ideally multiple) hosting provider(s)
-- For each of your configurations, execute `npm run build` to create CARS project artifacts
-- Deploy with `npm run deploy` and your project will be online
-- Use `cars` interactively, or visit your hosting provider(s) web portals, to view logs, configure custom domains, and pay your hosting bills
-- Share your new BSV project, it is now online!
+```
+brave-browser --disable-web-security --user-data-dir="/tmp/brave_dev"
+```
 
 ## Directory Structure
 
-The project structure is roughly as follows, although it can vary by project.
-
 ```
-| - deployment-info.json
-| - package.json
-| - local-data/
-| - frontend/
-  | - package.json
-  | - webpack.config.js
-  | - src/...
-  | - public/...
-  | - build/...
-| - backend/
-  | - package.json
-  | - tsconfig.json
-  | - mod.ts
-  | - src/
-    | - contracts/...
-    | - lookup-services/...
-    | - topic-managers/...
-    | - script-templates/...
-  | - artifacts/
-  | - dist/
+├── docker-compose.yml
+├── package.json
+├── backend/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── mod.ts                          # Library entry point
+│   ├── artifacts/
+│   │   └── YearBook.runar.json         # Compiled contract artifact
+│   └── src/
+│       ├── server.ts                   # HTTP overlay server
+│       ├── ChainTracksClient.ts        # ChainTracker implementation
+│       ├── types.ts                    # Shared types
+│       ├── contracts/
+│       │   ├── YearBook.runar.ts       # Runar smart contract
+│       │   └── compile.ts              # Contract compiler script
+│       ├── lookup-services/
+│       │   ├── YearBookLookupServiceFactory.ts
+│       │   ├── YearBookStorage.ts
+│       │   └── YearBookLookupDocs.md.ts
+│       └── topic-managers/
+│           ├── YearBookTopicManager.ts
+│           └── YearBookTopicDocs.md.ts
+└── frontend/
+    ├── Dockerfile
+    ├── nginx.conf
+    ├── package.json
+    ├── webpack.common.js / webpack.dev.js / webpack.prod.js
+    ├── public/
+    │   └── index.html
+    └── src/
+        ├── App.tsx                     # Main React SPA
+        ├── index.tsx                   # Entry point
+        ├── theme.ts                    # MUI dark theme
+        ├── artifacts/
+        │   └── YearBook.runar.json     # Copied from backend
+        └── types/
+            ├── types.d.ts              # Token, YearBook interfaces
+            └── mui.d.ts                # MUI type declarations
 ```
-
-The one constant is `deployment-info.json`.
 
 ## License
 

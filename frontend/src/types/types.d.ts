@@ -8,6 +8,6 @@ export interface Token {
 
 export interface YearBook {
   creatorIdentityKey: PubKeyHex
-  entryCount: number
+  friends: string[]
   token: Token
 }

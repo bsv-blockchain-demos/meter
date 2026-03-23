@@ -1,12 +1,15 @@
 {
-  "name": "@bsv/meter",
+  "name": "@bsv/yearbook",
   "private": true,
   "version": "1.0.0",
-  "description": "Meter - on-chain counter demo using Runar smart contracts",
+  "description": "YearBook - on-chain yearbook signing demo using Runar smart contracts",
   "scripts": {
     "dev": "docker compose up --build",
     "dev:down": "docker compose down",
     "dev:clean": "docker compose down -v",
+    "watch": "docker compose -f docker-compose.dev.yml up",
+    "watch:down": "docker compose -f docker-compose.dev.yml down",
+    "watch:clean": "docker compose -f docker-compose.dev.yml down -v",
     "build": "docker compose build",
     "frontend:dev": "cd frontend && npm run start",
     "backend:build": "cd backend && npm run build",

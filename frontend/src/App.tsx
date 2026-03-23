@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import {
@@ -19,11 +19,14 @@ import {
   Chip,
   Box,
   Container,
-  Avatar
+  Avatar,
+  Tooltip
 } from '@mui/material'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import CreateIcon from '@mui/icons-material/AutoStories'
 import DrawIcon from '@mui/icons-material/Draw'
+import ShareIcon from '@mui/icons-material/Share'
+import PersonIcon from '@mui/icons-material/Person'
 import useAsyncEffect from 'use-async-effect'
 import { YearBook, Token } from './types/types'
 import { RunarContract, extractStateFromScript } from 'runar-sdk'
@@ -38,8 +41,10 @@ import {
   WalletClient,
   SHIPBroadcasterConfig,
   CreateActionArgs,
-  HTTPSOverlayBroadcastFacilitator
+  HTTPSOverlayBroadcastFacilitator,
 } from '@bsv/sdk'
+
+const MAX_SLOTS = 10
 
 const walletClient = new WalletClient()
 const NETWORK_PRESET = 'local'
@@ -48,6 +53,11 @@ const httpFacilitator = new HTTPSOverlayBroadcastFacilitator(fetch, true)
 
 const TOPIC = 'tm_yearbook'
 const SERVICE = 'ls_yearbook'
+
+const FRIEND_FIELDS = [
+  'friend1', 'friend2', 'friend3', 'friend4', 'friend5',
+  'friend6', 'friend7', 'friend8', 'friend9', 'friend10'
+] as const
 
 const broadcasterConfig = (): SHIPBroadcasterConfig => ({
   networkPreset: NETWORK_PRESET,
@@ -74,6 +84,34 @@ const keyToColor = (key: string): string => {
   return `hsl(${hue}, 60%, 50%)`
 }
 
+/** Extract friend fields from contract state into a string array */
+const extractFriends = (state: Record<string, unknown>): string[] => {
+  return FRIEND_FIELDS.map(f => {
+    const val = state[f]
+    if (val === undefined || val === null || val === '') return ''
+    return String(val)
+  })
+}
+
+/** Count how many slots are filled */
+const filledSlots = (friends: string[]): number =>
+  friends.filter(f => f !== '').length
+
+/** Find the index (0-based) of the next empty friend slot, or -1 if full */
+const nextEmptySlot = (friends: string[]): number =>
+  friends.findIndex(f => f === '')
+
+/** Parse URL params for shared yearbook link */
+const getSharedOutpoint = (): { txid: string, outputIndex: number } | null => {
+  const params = new URLSearchParams(window.location.search)
+  const txid = params.get('txid')
+  const outputIndex = params.get('outputIndex')
+  if (txid) {
+    return { txid, outputIndex: outputIndex ? Number(outputIndex) : 0 }
+  }
+  return null
+}
+
 const App: React.FC = () => {
   const [createOpen, setCreateOpen] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
@@ -82,15 +120,36 @@ const App: React.FC = () => {
   const [signLoading, setSignLoading] = useState(false)
   const [yearBooksLoading, setYearBooksLoading] = useState(true)
   const [yearBooks, setYearBooks] = useState<YearBook[]>([])
+  const [highlightedOutpoint, setHighlightedOutpoint] = useState<string | null>(null)
 
-  const handleCreateSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault()
+  // Check for shared link on mount
+  useEffect(() => {
+    const shared = getSharedOutpoint()
+    if (shared) {
+      setHighlightedOutpoint(`${shared.txid}.${shared.outputIndex}`)
+    }
+  }, [])
+
+  // Scroll to highlighted yearbook once loaded
+  useEffect(() => {
+    if (!yearBooksLoading && highlightedOutpoint) {
+      const el = document.getElementById(`yb-${highlightedOutpoint}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [yearBooksLoading, highlightedOutpoint])
+
+  const handleCreateSubmit = async (): Promise<void> => {
+    console.log({ handleCreateSubmit: 'called' })
     try {
       setCreateLoading(true)
       const publicKey = (await walletClient.getPublicKey({ identityKey: true })).publicKey
 
-      const yearbook = new RunarContract(artifact, [publicKey, BigInt(0)])
+      const yearbook = new RunarContract(artifact, [publicKey])
       const lockingScript = yearbook.getLockingScript()
+
+      console.log({ lockingScript })
 
       const result = await walletClient.createAction({
         description: 'Create a yearbook',
@@ -115,7 +174,7 @@ const App: React.FC = () => {
       toast.dark('Yearbook created!')
       setYearBooks(prev => [{
         creatorIdentityKey: publicKey,
-        entryCount: 0,
+        friends: Array(MAX_SLOTS).fill(''),
         token: {
           atomicBeefTX: Utils.toHex(result.tx!),
           txid,
@@ -155,9 +214,11 @@ const App: React.FC = () => {
             const state = extractStateFromScript(artifact, script)
             if (!state) continue
 
+            const friends = extractFriends(state as Record<string, unknown>)
+
             parsed.push({
               creatorIdentityKey: String(state.creatorIdentityKey),
-              entryCount: Number(state.entryCount as bigint),
+              friends,
               token: {
                 atomicBeefTX: Utils.toHex(tx.toAtomicBEEF()),
                 txid: tx.id('hex'),
@@ -188,6 +249,11 @@ const App: React.FC = () => {
         throw new Error('Missing token data')
       }
 
+      const slotIndex = nextEmptySlot(yb.friends)
+      if (slotIndex === -1) {
+        throw new Error('This yearbook is full!')
+      }
+
       const contract = RunarContract.fromUtxo(artifact, {
         txid: yb.token.txid,
         outputIndex: yb.token.outputIndex,
@@ -195,16 +261,24 @@ const App: React.FC = () => {
         script: yb.token.lockingScript
       })
 
+      // Build next state: fill the correct friend slot with the message
       const nextContract = RunarContract.fromUtxo(artifact, {
         txid: yb.token.txid,
         outputIndex: yb.token.outputIndex,
         satoshis: yb.token.satoshis,
         script: yb.token.lockingScript
       })
-      nextContract.setState({
-        ...contract.state,
-        entryCount: (contract.state.entryCount as bigint) + 1n
+
+      const messageHex = Utils.toHex(new TextEncoder().encode(signMessage))
+      const nextFriends = [...yb.friends]
+      nextFriends[slotIndex] = messageHex
+
+      const nextState: Record<string, unknown> = { ...contract.state }
+      FRIEND_FIELDS.forEach((f, i) => {
+        nextState[f] = nextFriends[i]
       })
+      nextContract.setState(nextState)
+
       const nextScript = nextContract.getLockingScript()
       const unlockingScript = contract.buildUnlockingScript('sign', [])
       const atomicBeef = Utils.toArray(yb.token.atomicBeefTX, 'hex')
@@ -243,7 +317,7 @@ const App: React.FC = () => {
         const copy = [...prev]
         copy[index] = {
           ...copy[index],
-          entryCount: copy[index].entryCount + 1,
+          friends: nextFriends,
           token: {
             atomicBeefTX: Utils.toHex(result.tx!),
             txid,
@@ -264,6 +338,23 @@ const App: React.FC = () => {
     }
   }
 
+  const handleShareLink = (yb: YearBook) => {
+    const url = new URL(window.location.href.split('?')[0])
+    url.searchParams.set('txid', yb.token.txid)
+    url.searchParams.set('outputIndex', String(yb.token.outputIndex))
+    navigator.clipboard.writeText(url.toString())
+    toast.dark('Link copied to clipboard!')
+  }
+
+  const decodeMessage = (hex: string): string => {
+    if (!hex) return ''
+    try {
+      return new TextDecoder().decode(Utils.toArray(hex, 'hex') as unknown as Uint8Array)
+    } catch {
+      return hex
+    }
+  }
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <ToastContainer position="top-center" autoClose={4000} theme="dark" />
@@ -280,7 +371,7 @@ const App: React.FC = () => {
           </Typography>
           <IconButton
             sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
-            onClick={() => window.open('https://github.com/bsv-blockchain-demos/meter', '_blank')}
+            onClick={() => window.open('https://github.com/bsv-blockchain-demos/yearbook', '_blank')}
           >
             <GitHubIcon />
           </IconButton>
@@ -391,59 +482,189 @@ const App: React.FC = () => {
               gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
               gap: 2
             }}>
-              {yearBooks.map((yb, i) => (
-                <Card key={i} sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <CardContent sx={{ flex: 1, p: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                      <Avatar sx={{
-                        width: 40,
-                        height: 40,
-                        bgcolor: keyToColor(yb.creatorIdentityKey),
-                        fontSize: 16,
-                        fontWeight: 700
-                      }}>
-                        {yb.creatorIdentityKey.slice(2, 4).toUpperCase()}
-                      </Avatar>
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                          {truncateKey(yb.creatorIdentityKey)}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          owner
-                        </Typography>
+              {yearBooks.map((yb, i) => {
+                const filled = filledSlots(yb.friends)
+                const isFull = filled >= MAX_SLOTS
+                const outpoint = `${yb.token.txid}.${yb.token.outputIndex}`
+                const isHighlighted = highlightedOutpoint === outpoint
+
+                return (
+                  <Card
+                    key={i}
+                    id={`yb-${outpoint}`}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      ...(isHighlighted && {
+                        borderColor: 'primary.main',
+                        boxShadow: '0 0 24px rgba(108, 99, 255, 0.4)'
+                      })
+                    }}
+                  >
+                    <CardContent sx={{ flex: 1, p: 3 }}>
+                      {/* Owner */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                        <Avatar sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: keyToColor(yb.creatorIdentityKey),
+                          fontSize: 16,
+                          fontWeight: 700
+                        }}>
+                          {yb.creatorIdentityKey.slice(2, 4).toUpperCase()}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Tooltip title={yb.creatorIdentityKey} placement="top">
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                              {truncateKey(yb.creatorIdentityKey)}
+                            </Typography>
+                          </Tooltip>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            owner
+                          </Typography>
+                        </Box>
+                        <Tooltip title="Copy share link">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleShareLink(yb)}
+                            sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                          >
+                            <ShareIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </Box>
-                    </Box>
 
-                    <Chip
-                      icon={<DrawIcon sx={{ fontSize: '16px !important' }} />}
-                      label={`${yb.entryCount} signature${yb.entryCount !== 1 ? 's' : ''}`}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        mb: 2.5,
-                        borderColor: yb.entryCount > 0 ? 'secondary.dark' : 'rgba(255,255,255,0.12)',
-                        color: yb.entryCount > 0 ? 'secondary.light' : 'text.secondary'
-                      }}
-                    />
+                      {/* Slots status */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                        <Chip
+                          icon={<DrawIcon sx={{ fontSize: '16px !important' }} />}
+                          label={`${filled} / ${MAX_SLOTS} signatures`}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            borderColor: isFull
+                              ? 'rgba(255, 107, 157, 0.5)'
+                              : filled > 0
+                                ? 'secondary.dark'
+                                : 'rgba(255,255,255,0.12)',
+                            color: isFull
+                              ? 'secondary.main'
+                              : filled > 0
+                                ? 'secondary.light'
+                                : 'text.secondary'
+                          }}
+                        />
+                        {isFull && (
+                          <Chip
+                            label="FULL"
+                            size="small"
+                            sx={{
+                              bgcolor: 'rgba(255, 107, 157, 0.15)',
+                              color: 'secondary.main',
+                              fontWeight: 700,
+                              fontSize: '0.7rem'
+                            }}
+                          />
+                        )}
+                      </Box>
 
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      startIcon={<DrawIcon />}
-                      onClick={() => setSignOpen(i)}
-                      sx={{
-                        background: 'linear-gradient(135deg, #FF6B9D, #FF8FB3)',
-                        '&:hover': {
-                          background: 'linear-gradient(135deg, #EE5A8C, #FF7EA5)',
-                          boxShadow: '0 6px 24px rgba(255, 107, 157, 0.3)'
-                        }
-                      }}
-                    >
-                      Sign This Yearbook
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                      {/* Signers list */}
+                      {filled > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                          {yb.friends.map((friend, fi) => {
+                            if (!friend) return null
+                            const decoded = decodeMessage(friend)
+                            return (
+                              <Box
+                                key={fi}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  py: 0.75,
+                                  px: 1.5,
+                                  mb: 0.5,
+                                  borderRadius: 2,
+                                  bgcolor: 'rgba(255,255,255,0.03)',
+                                  border: '1px solid rgba(255,255,255,0.04)'
+                                }}
+                              >
+                                <PersonIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: 'text.primary',
+                                    fontStyle: 'italic',
+                                    flex: 1,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  "{decoded}"
+                                </Typography>
+                                <Chip
+                                  label={`#${fi + 1}`}
+                                  size="small"
+                                  sx={{
+                                    height: 20,
+                                    fontSize: '0.65rem',
+                                    bgcolor: 'rgba(108, 99, 255, 0.1)',
+                                    color: 'primary.light'
+                                  }}
+                                />
+                              </Box>
+                            )
+                          })}
+                        </Box>
+                      )}
+
+                      {/* Empty slots indicator */}
+                      {!isFull && filled < MAX_SLOTS && (
+                        <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap' }}>
+                          {Array.from({ length: MAX_SLOTS }).map((_, si) => (
+                            <Box
+                              key={si}
+                              sx={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                bgcolor: si < filled
+                                  ? 'secondary.main'
+                                  : 'rgba(255,255,255,0.08)',
+                                transition: 'background-color 0.2s'
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      )}
+
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        startIcon={<DrawIcon />}
+                        onClick={() => setSignOpen(i)}
+                        disabled={isFull}
+                        sx={{
+                          background: isFull
+                            ? 'rgba(255,255,255,0.08)'
+                            : 'linear-gradient(135deg, #FF6B9D, #FF8FB3)',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #EE5A8C, #FF7EA5)',
+                            boxShadow: '0 6px 24px rgba(255, 107, 157, 0.3)'
+                          },
+                          '&.Mui-disabled': {
+                            background: 'rgba(255,255,255,0.08)',
+                            color: 'rgba(255,255,255,0.3)'
+                          }
+                        }}
+                      >
+                        {isFull ? 'Yearbook Full' : 'Sign This Yearbook'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </Box>
           </>
         )}
@@ -457,25 +678,19 @@ const App: React.FC = () => {
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <form onSubmit={(e: FormEvent<HTMLFormElement>) => {
-          e.preventDefault()
-          void (async () => {
-            try { await handleCreateSubmit(e) } catch (err) { console.error(err) }
-          })()
-        }}>
           <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Create a Yearbook</DialogTitle>
           <DialogContent>
             <DialogContentText>
               Start your on-chain yearbook. Once created, anyone can sign it with their wallet.
+              Share the link with friends so they can leave their mark.
             </DialogContentText>
           </DialogContent>
           {createLoading ? <LinearProgress sx={{ mx: 3, mb: 2, borderRadius: 1 }} /> : (
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
               <Button onClick={() => setCreateOpen(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
-              <Button type="submit" variant="contained">Create</Button>
+              <Button variant="contained" onClick={() => { void handleCreateSubmit().catch(console.error) }}>Create</Button>
             </DialogActions>
           )}
-        </form>
       </Dialog>
 
       {/* Sign Dialog */}
@@ -490,6 +705,11 @@ const App: React.FC = () => {
         <DialogContent>
           <DialogContentText sx={{ mb: 2.5 }}>
             Leave a message that gets recorded as a Bitcoin transaction.
+            {signOpen !== null && yearBooks[signOpen] && (
+              <Box component="span" sx={{ display: 'block', mt: 1, color: 'text.secondary', fontSize: '0.85rem' }}>
+                Slot {filledSlots(yearBooks[signOpen].friends) + 1} of {MAX_SLOTS}
+              </Box>
+            )}
           </DialogContentText>
           <TextField
             autoFocus

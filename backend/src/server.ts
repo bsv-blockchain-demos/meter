@@ -19,7 +19,7 @@ async function main () {
   server.configureNetwork(process.env.BSV_NETWORK === 'test' ? 'test' : 'main')
   server.configureChainTracker(new ChainTracksClient(CHAINTRACKS_URL))
 
-  await server.configureKnex(process.env.KNEX_URL ?? 'mysql://root:example@localhost:3306/meter')
+  await server.configureKnex(process.env.KNEX_URL ?? 'mysql://root:example@localhost:3306/yearbook')
   await server.configureMongo(MONGO_URL)
 
   server.configureTopicManager('tm_yearbook', new YearBookTopicManager())

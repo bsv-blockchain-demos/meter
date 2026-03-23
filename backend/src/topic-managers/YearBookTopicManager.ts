@@ -22,8 +22,9 @@ export default class YearBookTopicManager implements TopicManager {
           const state = extractStateFromScript(artifact, scriptHex)
           if (!state) continue
 
-          // Valid YearBook output — has creatorIdentityKey and entryCount
-          if (state.creatorIdentityKey && state.entryCount !== undefined) {
+          // Valid YearBook output — has creatorIdentityKey (PubKey)
+          // and friend fields for signature slots
+          if (state.creatorIdentityKey) {
             outputsToAdmit.push(i)
           }
         } catch (error) {
